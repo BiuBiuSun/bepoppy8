@@ -1,0 +1,27 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="bepoppy8">
+  <doc>
+    <description>
+      Object Avoidance in the TU Delft CyberZoo using the onboard sensors of the Parrot Bebop Drone
+    </description>
+  </doc>
+
+  <depends>cv_colorfilter.xml</depends>
+
+  <header>
+    <file name="bepoppy8.h"/>
+  </header>
+
+  <init fun="bepoppy8_init()"/>
+  <periodic fun="beboppy8_periodic()" freq="15"/>
+  <event fun="beboppy8_move_waypoint()"/>
+  
+  <datalink message="bepoppy8_event" fun="bepoppy8_datalinkevent()"/>
+  
+  <makefile target="ap">
+    <file name="bepoppy8.c"/>
+  </makefile>
+
+</module>
+
