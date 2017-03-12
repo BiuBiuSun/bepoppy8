@@ -35,6 +35,13 @@ void bepoppy8_periodic() {
 	logTelemetry("Bepoppy8_periodic");
 }
 
+
+/*
+ * Use to send debugging related strings to the terminal and GCS.
+ *
+ * #Note: 	Due to a bug in the Paparazzi Code, do NOT use delimiters as ) in the telemetry strings.
+ *			There may be more delimiters that also cause errors.
+ */
 void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 	if (DEBUGGING){
 		DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, nb_msg,  msg);
@@ -42,7 +49,11 @@ void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 	}
 }
 
-void bepoppy8_moveWaypoint(uint8_t waypoint, struct EnuCoor_i *shift){
+
+/*
+ * Move the current waypoint with the distances defined by *shift.
+ */
+void bepoppy8_moveWaypointBy(uint8_t waypoint, struct EnuCoor_i *shift){
 	struct EnuCoor_i new_coor;
 
 	struct EnuCoor_i *pos 	= stateGetPositionEnu_i();
@@ -61,6 +72,53 @@ void bepoppy8_moveWaypoint(uint8_t waypoint, struct EnuCoor_i *shift){
 
 }
 
+
+/*
+ * Move the current waypoint to the location defined by *new_coor.
+ */
+void bepoppy8_moveWaypointTo(uint8_t waypoint, struct EnuCoor_i *new_coor){
+	struct EnuCoor_i *pos 	= stateGetPositionEnu_i();
+	struct EnuCoor_i shift;
+
+	shift.x 				= pos->x - new_coor->x;
+	shift.y 				= pos->y - new_coor->y;
+	shift.z 				= pos->z - new_coor->z;
+
+	coordinateTurn(pos, &shift, &nav_heading);
+
+	if(shift.z != 0){
+		new_coor->z 		= pos->z + shift.z;
+		waypoint_set_enu_i (waypoint, new_coor);
+	}
+	else{
+		waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y);
+	}
+
+}
+
+
+/*
+ * Move waypoint forward with an amount equal to the parameter distance.
+ */
+void bepoppy8_moveWaypointForward(uint8_t waypoint, float distance){
+	struct EnuCoor_i shift;
+	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
+
+	// Calculate the sine and cosine of the heading the drone is keeping
+	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
+	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
+
+	// Now determine where to place the waypoint you want to go to
+	shift.x                       		= sin_heading * distance;
+	shift.y                       		= cos_heading * distance;
+
+	bepoppy8_moveWaypointBy(waypoint, &shift);
+}
+
+
+/*
+ * Based on the shift vector, set the new heading of the rotorcraft.
+ */
 void coordinateTurn(struct EnuCoor_i *pos, struct EnuCoor_i *shift, int32_t *heading){
 
 	int32_t newHeading 	= ANGLE_BFP_OF_REAL(atan2(shift->y,shift->x) + M_PI/2);

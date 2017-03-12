@@ -20,7 +20,9 @@ extern void bepoppy8_init(void);
 extern void bepoppy8_periodic(void);
 
 extern void bepoppy8_logTelemetry(char*, int);
-extern void bepoppy8_moveWaypoint(uint8_t, struct EnuCoor_i *);
+extern void bepoppy8_moveWaypointBy(uint8_t, struct EnuCoor_i *);
+extern void bepoppy8_moveWaypointTo(uint8_t, struct EnuCoor_i *);
+extern void bepoppy8_moveWaypointForward(uint8_t, float);
 extern void coordinateTurn(struct EnuCoor_i *, struct EnuCoor_i *, int32_t *);
 
 #endif
