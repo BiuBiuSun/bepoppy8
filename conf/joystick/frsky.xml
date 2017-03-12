@@ -64,17 +64,13 @@ The basis of steering is the standard signs of aerospace convention
     <button index="23" name="b24"/>
   </input>
 
-  <variables>
-   <var name="mode" default="0"/>
-  </variables>
-
   <messages period="0.05">
     <message class="datalink" name="RC_4CH" send_always="true">
       <field name="throttle" value="Fit(throttle,-127,126,0,127)" />
       <field name="roll" value="roll" />
-      <field name="pitch" value="-pitch" />
+      <field name="pitch" value="pitch" />
       <field name="yaw" value="yaw"/>
-      <field name="mode" value="Fit(-mode,-150,150,0,2)"/>
+      <field name="mode" value="mode"/>
     </message>
   </messages>
 </joystick>
