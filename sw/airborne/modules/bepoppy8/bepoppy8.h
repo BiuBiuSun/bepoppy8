@@ -13,10 +13,13 @@
 #define BEPOPPY8_H
 #include <inttypes.h>
 
-extern void bepoppy8_init();
-extern void beboppy8_periodic();
-// extern void beboppy8_move_waypoint();
-// extern void bepoppy8_datalinkevent();
+#define DEBUGGING true
+
+extern void bepoppy8_init(void);
+extern void bepoppy8_periodic(void);
+
+extern void bepoppy8_logTelemetry(char*, int);
+extern void bepoppy8_moveWaypoint(uint8_t, struct EnuCoor_i);
 
 #endif
 

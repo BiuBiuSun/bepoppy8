@@ -12,37 +12,60 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "firmwares/rotorcraft/navigation.h"
+#include "subsystems/datalink/telemetry.h"
 #include "generated/flight_plan.h"
 #include "modules/bepoppy8/bepoppy8.h"
+
+#if DEBUGGING
+#define logTelemetry(msg)	bepoppy8_logTelemetry(msg, (int) strlen(msg));
+#else
+#define logTelemetry(...)
+#endif
 
 void bepoppy8_init() {
 	// Initial values to be defined at start-up of module
 
 }
 
-void beboppy8_periodic() {
+void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 
 }
 
-void beboppy8_move_waypoint() {
+void bepoppy8_logTelemetry(char* msg, int nb_msg) {
+	if (DEBUGGING){
+		DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, nb_msg,  msg);
+		printf("%s", msg);
+	}
+}
+
+void bepoppy8_moveWaypoint(uint8_t waypoint, struct EnuCoor_i shift){
+	struct EnuCoor_i* new_coor;
+	struct EnuCoor_i *pos 	= stateGetPositionEnu_i();
+	new_coor->x  			= pos->x + POS_BFP_OF_REAL(shift->x);
+	new_coor->y 			= pos->y + POS_BFP_OF_REAL(shift->y);
+
+	coordinateTurn(pos, shift);
+
+	if(shift->z != 0){
+		new_coor->z 		= pos->z + POS_BFP_OF_REAL(shift->z);
+		waypoint_set_enu_i (waypoint, new_coor);
+	}
+	else{
+		waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y);
+	}
 
 }
 
-void bepoppy8_datalinkevent() {
+void coordinateTurn(struct EnuCoor_i* pos, struct EnuCoor_i* shift){
 
+	int32_t newHeading 	= ANGLE_BFP_OF_REAL(atan2(shift->y,shift->x) + M_PI/2);
+	INT32_ANGLENORMALIZE(newHeading);
+
+	&nav_heading 	= newHeading;
 }
 
 
-uint8_t increase_nav_heading(int32_t *heading, float incrementDegrees)
-{
-  struct Int32Eulers *eulerAngles   = stateGetNedToBodyEulers_i();
-  int32_t newHeading = eulerAngles->psi + ANGLE_BFP_OF_REAL( incrementDegrees / 180.0 * M_PI);
-  // Check if your turn made it go out of bounds...
-  INT32_ANGLE_NORMALIZE(newHeading); // HEADING HAS INT32_ANGLE_FRAC....
-  *heading = newHeading;
-  VERBOSE_PRINT("Increasing heading to %f\n", ANGLE_FLOAT_OF_BFP(*heading) * 180 / M_PI);
-  return false;
-}

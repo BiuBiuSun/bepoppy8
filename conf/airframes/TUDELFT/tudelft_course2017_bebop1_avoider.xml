@@ -65,6 +65,7 @@
 			<define name="VIEWVIDEO_VIDEO_FILE" value="orangeAvoider" />
 			<define name="VIEWVIDEO_STREAM_VIDEO" value="TRUE" />
 		</module>
+		<module name="bepoppy8" />
 	</modules>
 
 	<commands>

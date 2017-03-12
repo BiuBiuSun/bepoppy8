@@ -14,10 +14,7 @@
   </header>
 
   <init fun="bepoppy8_init()"/>
-  <periodic fun="beboppy8_periodic()" freq="15"/>
-  <event fun="beboppy8_move_waypoint()"/>
-  
-  <datalink message="bepoppy8_event" fun="bepoppy8_datalinkevent()"/>
+  <periodic fun="beboppy8_periodic()" freq="0.1"/>
   
   <makefile target="ap">
     <file name="bepoppy8.c"/>
