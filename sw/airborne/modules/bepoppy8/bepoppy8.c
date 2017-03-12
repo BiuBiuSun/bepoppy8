@@ -27,12 +27,12 @@
 
 void bepoppy8_init() {
 	// Initial values to be defined at start-up of module
-
+	logTelemetry("Bepoppy8_init");
 }
 
 void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
-
+	logTelemetry("Bepoppy8_periodic");
 }
 
 void bepoppy8_logTelemetry(char* msg, int nb_msg) {
@@ -42,30 +42,31 @@ void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 	}
 }
 
-void bepoppy8_moveWaypoint(uint8_t waypoint, struct EnuCoor_i shift){
-	struct EnuCoor_i* new_coor;
-	struct EnuCoor_i *pos 	= stateGetPositionEnu_i();
-	new_coor->x  			= pos->x + POS_BFP_OF_REAL(shift->x);
-	new_coor->y 			= pos->y + POS_BFP_OF_REAL(shift->y);
+void bepoppy8_moveWaypoint(uint8_t waypoint, struct EnuCoor_i *shift){
+	struct EnuCoor_i new_coor;
 
-	coordinateTurn(pos, shift);
+	struct EnuCoor_i *pos 	= stateGetPositionEnu_i();
+	new_coor.x  			= pos->x + shift->x;
+	new_coor.y 				= pos->y + shift->y;
+
+	coordinateTurn(pos, shift, &nav_heading);
 
 	if(shift->z != 0){
-		new_coor->z 		= pos->z + POS_BFP_OF_REAL(shift->z);
-		waypoint_set_enu_i (waypoint, new_coor);
+		new_coor.z 		= pos->z + shift->z;
+		waypoint_set_enu_i (waypoint, &new_coor);
 	}
 	else{
-		waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y);
+		waypoint_set_xy_i(waypoint, new_coor.x, new_coor.y);
 	}
 
 }
 
-void coordinateTurn(struct EnuCoor_i* pos, struct EnuCoor_i* shift){
+void coordinateTurn(struct EnuCoor_i *pos, struct EnuCoor_i *shift, int32_t *heading){
 
 	int32_t newHeading 	= ANGLE_BFP_OF_REAL(atan2(shift->y,shift->x) + M_PI/2);
-	INT32_ANGLENORMALIZE(newHeading);
+	INT32_ANGLE_NORMALIZE(newHeading);
 
-	&nav_heading 	= newHeading;
+	*heading 	= newHeading;
 }
 
 

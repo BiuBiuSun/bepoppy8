@@ -12,6 +12,7 @@
 #ifndef BEPOPPY8_H
 #define BEPOPPY8_H
 #include <inttypes.h>
+#include "state.h"
 
 #define DEBUGGING true
 
@@ -19,7 +20,8 @@ extern void bepoppy8_init(void);
 extern void bepoppy8_periodic(void);
 
 extern void bepoppy8_logTelemetry(char*, int);
-extern void bepoppy8_moveWaypoint(uint8_t, struct EnuCoor_i);
+extern void bepoppy8_moveWaypoint(uint8_t, struct EnuCoor_i *);
+extern void coordinateTurn(struct EnuCoor_i *, struct EnuCoor_i *, int32_t *);
 
 #endif
 

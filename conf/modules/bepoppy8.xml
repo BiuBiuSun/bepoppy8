@@ -14,7 +14,7 @@
   </header>
 
   <init fun="bepoppy8_init()"/>
-  <periodic fun="beboppy8_periodic()" freq="0.1"/>
+  <periodic fun="bepoppy8_periodic()" freq="0.1"/>
   
   <makefile target="ap">
     <file name="bepoppy8.c"/>
