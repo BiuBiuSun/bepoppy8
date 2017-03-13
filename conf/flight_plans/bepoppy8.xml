@@ -105,6 +105,7 @@
       <set var="trajectoryConfidence" value="1"/>
     </block>
     <block name="StayGoal">
+      <call_once fun="bepoppy8_start(WP_GOAL)"/>
       <stay wp="GOAL"/>
       <exception cond="!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))" deroute="PrepareObstacleRun"/>
     </block>

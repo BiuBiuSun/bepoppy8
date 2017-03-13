@@ -25,22 +25,31 @@
 #define logTelemetry(...)
 #endif
 
+
 void bepoppy8_init() {
 	// Initial values to be defined at start-up of module
-	logTelemetry("Bepoppy8_init");
+
 }
 
 void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
-	logTelemetry("Bepoppy8_periodic");
+
 }
 
 
 /*
- * Use to send debugging related strings to the terminal and GCS.
+ * Use logTelemetry("message") to send debugging related strings to the terminal and GCS.
+ *
+ * Build a string with variable messages using the following structure:
+ * char *msg;
+ *
+ * asprintf(&msg, "Put static string here, with inserted variables like %s", variable)
+ * logTelemetry(msg);
  *
  * #Note: 	Due to a bug in the Paparazzi Code, do NOT use delimiters as ) in the telemetry strings.
  *			There may be more delimiters that also cause errors.
+ *
+ *	Tested by Dave 13-03-2017
  */
 void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 	if (DEBUGGING){
@@ -49,82 +58,104 @@ void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 	}
 }
 
+void bepoppy8_start(uint8_t waypoint){
+	char *msg;
+	logTelemetry("bepoppy8_start initiated");
+	struct EnuCoor_i shift;
+	shift.x 	= POS_BFP_OF_REAL(0.5);
+	shift.y 	= POS_BFP_OF_REAL(0.5);
+	logTelemetry("shift set");
+	asprintf(&msg, "Shift: x = %f, y = %f", POS_FLOAT_OF_BFP(shift.x), POS_FLOAT_OF_BFP(shift.y));
+	logTelemetry(msg);
+	logTelemetry("call moveWaypointBy");
+	bepoppy8_moveWaypointBy(waypoint, &shift);
+}
 
 /*
  * Move the current waypoint with the distances defined by *shift.
+ *
+ * Tested: By Dave - 13-03-2017
  */
 void bepoppy8_moveWaypointBy(uint8_t waypoint, struct EnuCoor_i *shift){
-	struct EnuCoor_i new_coor;
+	char *msg; 																// Placeholder Telemetry String
+	struct EnuCoor_i *new_coor;												// New Coordinate Struct
 
-	struct EnuCoor_i *pos 	= stateGetPositionEnu_i();
-	new_coor.x  			= pos->x + shift->x;
-	new_coor.y 				= pos->y + shift->y;
+	struct EnuCoor_i *pos 				= stateGetPositionEnu_i(); 			// Calculate new position of waypoint
+	new_coor->x  						= pos->x + shift->x;
+	new_coor->y 						= pos->y + shift->y;
 
-	coordinateTurn(pos, shift, &nav_heading);
+	// Telemetry:
+	logTelemetry("[bepoppy8] moveWaypointBy:");
+	asprintf(&msg, "Current pos: %f, %f", POS_FLOAT_OF_BFP(pos->x), POS_FLOAT_OF_BFP(pos->y));
+	logTelemetry(msg);
+	asprintf(&msg, "New pos: %f, %f", POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y));
+	logTelemetry(msg);
+	asprintf(&msg, "Current Heading: %f", ANGLE_FLOAT_OF_BFP(nav_heading));
+	logTelemetry(msg);
+	asprintf(&msg, "Desired Heading: %f", calculateHeading(shift));
 
-	if(shift->z != 0){
-		new_coor.z 		= pos->z + shift->z;
-		waypoint_set_enu_i (waypoint, &new_coor);
-	}
-	else{
-		waypoint_set_xy_i(waypoint, new_coor.x, new_coor.y);
-	}
+	coordinateTurn(shift); 									// Turn toward new waypoint location.
+	waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y); 	// Set x,y position of waypoint
 
 }
 
 
 /*
  * Move the current waypoint to the location defined by *new_coor.
+ *
+ * Not tested
  */
 void bepoppy8_moveWaypointTo(uint8_t waypoint, struct EnuCoor_i *new_coor){
-	struct EnuCoor_i *pos 	= stateGetPositionEnu_i();
-	struct EnuCoor_i shift;
+	struct EnuCoor_i *pos 				= stateGetPositionEnu_i();
 
-	shift.x 				= pos->x - new_coor->x;
-	shift.y 				= pos->y - new_coor->y;
-	shift.z 				= pos->z - new_coor->z;
+	struct EnuCoor_i *shift;
+	shift->x 							= pos->x - new_coor->x;
+	shift->y 							= pos->y - new_coor->y;
 
-	coordinateTurn(pos, &shift, &nav_heading);
-
-	if(shift.z != 0){
-		new_coor->z 		= pos->z + shift.z;
-		waypoint_set_enu_i (waypoint, new_coor);
-	}
-	else{
-		waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y);
-	}
+	coordinateTurn(shift);  								// Turn toward new waypoint location.
+	waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y); 	// Set x,y position of waypoint
 
 }
 
 
 /*
- * Move waypoint forward with an amount equal to the parameter distance.
+ * Move waypoint forward relative to the position of the drone
+ *
+ * Not tested
  */
 void bepoppy8_moveWaypointForward(uint8_t waypoint, float distance){
-	struct EnuCoor_i shift;
+	struct EnuCoor_i *shift;
 	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
 
 	// Calculate the sine and cosine of the heading the drone is keeping
 	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
 	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
 
-	// Now determine where to place the waypoint you want to go to
-	shift.x                       		= sin_heading * distance;
-	shift.y                       		= cos_heading * distance;
+	// Calculate the shift in position where to place the waypoint you want to go to
+	shift->x                       		= POS_BFP_OF_REAL(sin_heading * distance);
+	shift->y                       		= POS_BFP_OF_REAL(cos_heading * distance);
 
-	bepoppy8_moveWaypointBy(waypoint, &shift);
+	bepoppy8_moveWaypointBy(waypoint, shift);
 }
 
+/*
+ * Set heading based on the direction of the shift vector.
+ *
+ * Not tested
+ */
+void coordinateTurn(struct EnuCoor_i *shift){ // Set heading based on shift vector
+	float heading_f 					= atan2f(POS_FLOAT_OF_BFP(shift->x), POS_FLOAT_OF_BFP(shift->y));
+	nav_heading 						= ANGLE_BFP_OF_REAL(heading_f);
+}
 
 /*
- * Based on the shift vector, set the new heading of the rotorcraft.
+ * Calculate heading based on the direction of the shift vector.
+ *
+ * Not tested
  */
-void coordinateTurn(struct EnuCoor_i *pos, struct EnuCoor_i *shift, int32_t *heading){
-
-	int32_t newHeading 	= ANGLE_BFP_OF_REAL(atan2(shift->y,shift->x) + M_PI/2);
-	INT32_ANGLE_NORMALIZE(newHeading);
-
-	*heading 	= newHeading;
+float calculateHeading(struct EnuCoor_i *shift){ // Returns desired heading based on shift vector, in rad.
+	float heading_f 					= atan2f(POS_FLOAT_OF_BFP(shift->x), POS_FLOAT_OF_BFP(shift->y));
+	return heading_f;
 }
 
 
