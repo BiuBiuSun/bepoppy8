@@ -61,41 +61,44 @@ void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 void bepoppy8_start(uint8_t waypoint){
 	char *msg;
 	logTelemetry("bepoppy8_start initiated");
+
 	struct EnuCoor_i shift;
-	shift.x 	= POS_BFP_OF_REAL(0.5);
-	shift.y 	= POS_BFP_OF_REAL(0.5);
-	logTelemetry("shift set");
+	shift.x 	= POS_BFP_OF_REAL(1.0);
+	shift.y 	= POS_BFP_OF_REAL(1.0);
+
 	asprintf(&msg, "Shift: x = %f, y = %f", POS_FLOAT_OF_BFP(shift.x), POS_FLOAT_OF_BFP(shift.y));
 	logTelemetry(msg);
-	logTelemetry("call moveWaypointBy");
-	bepoppy8_moveWaypointBy(waypoint, &shift);
+
+	logTelemetry("call moveWaypointTo");
+	bepoppy8_moveWaypointTo(waypoint, 2.5);
 }
 
 /*
  * Move the current waypoint with the distances defined by *shift.
  *
- * Tested: By Dave - 13-03-2017
+ * Tested: By Dave, Tijmen, Joost 14-03-2017
  */
 void bepoppy8_moveWaypointBy(uint8_t waypoint, struct EnuCoor_i *shift){
 	char *msg; 																// Placeholder Telemetry String
-	struct EnuCoor_i *new_coor;												// New Coordinate Struct
+	struct EnuCoor_i new_coor;												// New Coordinate Struct
 
 	struct EnuCoor_i *pos 				= stateGetPositionEnu_i(); 			// Calculate new position of waypoint
-	new_coor->x  						= pos->x + shift->x;
-	new_coor->y 						= pos->y + shift->y;
+	new_coor.x  						= pos->x + shift->x;
+	new_coor.y 							= pos->y + shift->y;
 
 	// Telemetry:
 	logTelemetry("[bepoppy8] moveWaypointBy:");
 	asprintf(&msg, "Current pos: %f, %f", POS_FLOAT_OF_BFP(pos->x), POS_FLOAT_OF_BFP(pos->y));
 	logTelemetry(msg);
-	asprintf(&msg, "New pos: %f, %f", POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y));
+	asprintf(&msg, "New pos: %f, %f", POS_FLOAT_OF_BFP(new_coor.x), POS_FLOAT_OF_BFP(new_coor.y));
 	logTelemetry(msg);
 	asprintf(&msg, "Current Heading: %f", ANGLE_FLOAT_OF_BFP(nav_heading));
 	logTelemetry(msg);
 	asprintf(&msg, "Desired Heading: %f", calculateHeading(shift));
+	logTelemetry(msg);
 
 	coordinateTurn(shift); 									// Turn toward new waypoint location.
-	waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y); 	// Set x,y position of waypoint
+	waypoint_set_xy_i(waypoint, new_coor.x, new_coor.y); 	// Set x,y position of waypoint
 
 }
 
@@ -108,11 +111,11 @@ void bepoppy8_moveWaypointBy(uint8_t waypoint, struct EnuCoor_i *shift){
 void bepoppy8_moveWaypointTo(uint8_t waypoint, struct EnuCoor_i *new_coor){
 	struct EnuCoor_i *pos 				= stateGetPositionEnu_i();
 
-	struct EnuCoor_i *shift;
-	shift->x 							= pos->x - new_coor->x;
-	shift->y 							= pos->y - new_coor->y;
+	struct EnuCoor_i shift;
+	shift.x 							= pos->x - new_coor->x;
+	shift.y 							= pos->y - new_coor->y;
 
-	coordinateTurn(shift);  								// Turn toward new waypoint location.
+	coordinateTurn(&shift);  								// Turn toward new waypoint location.
 	waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y); 	// Set x,y position of waypoint
 
 }
@@ -121,10 +124,10 @@ void bepoppy8_moveWaypointTo(uint8_t waypoint, struct EnuCoor_i *new_coor){
 /*
  * Move waypoint forward relative to the position of the drone
  *
- * Not tested
+ * Tested Dave, Tijmen, Joost 14-03-2017
  */
 void bepoppy8_moveWaypointForward(uint8_t waypoint, float distance){
-	struct EnuCoor_i *shift;
+	struct EnuCoor_i shift;
 	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
 
 	// Calculate the sine and cosine of the heading the drone is keeping
@@ -132,16 +135,16 @@ void bepoppy8_moveWaypointForward(uint8_t waypoint, float distance){
 	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
 
 	// Calculate the shift in position where to place the waypoint you want to go to
-	shift->x                       		= POS_BFP_OF_REAL(sin_heading * distance);
-	shift->y                       		= POS_BFP_OF_REAL(cos_heading * distance);
+	shift.x                       		= POS_BFP_OF_REAL(sin_heading * distance);
+	shift.y                       		= POS_BFP_OF_REAL(cos_heading * distance);
 
-	bepoppy8_moveWaypointBy(waypoint, shift);
+	bepoppy8_moveWaypointBy(waypoint, &shift);
 }
 
 /*
  * Set heading based on the direction of the shift vector.
  *
- * Not tested
+ * Tested by Dave, Tijmen, Joost  14-03-2017
  */
 void coordinateTurn(struct EnuCoor_i *shift){ // Set heading based on shift vector
 	float heading_f 					= atan2f(POS_FLOAT_OF_BFP(shift->x), POS_FLOAT_OF_BFP(shift->y));
@@ -151,10 +154,11 @@ void coordinateTurn(struct EnuCoor_i *shift){ // Set heading based on shift vect
 /*
  * Calculate heading based on the direction of the shift vector.
  *
- * Not tested
+ * Tested by Dave 14-03-2017
  */
 float calculateHeading(struct EnuCoor_i *shift){ // Returns desired heading based on shift vector, in rad.
 	float heading_f 					= atan2f(POS_FLOAT_OF_BFP(shift->x), POS_FLOAT_OF_BFP(shift->y));
+
 	return heading_f;
 }
 
