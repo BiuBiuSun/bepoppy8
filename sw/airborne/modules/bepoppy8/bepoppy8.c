@@ -70,7 +70,7 @@ void bepoppy8_start(uint8_t waypoint){
 	logTelemetry(msg);
 
 	logTelemetry("call moveWaypointTo");
-	bepoppy8_moveWaypointTo(waypoint, 2.5);
+	//bepoppy8_moveWaypointTo(waypoint, 2.5);
 }
 
 /*
@@ -162,4 +162,10 @@ float calculateHeading(struct EnuCoor_i *shift){ // Returns desired heading base
 	return heading_f;
 }
 
-
+uint8_t increase_nav_heading(int32_t *heading, float incrementDegrees){
+  struct Int32Eulers *eulerAngles   = stateGetNedToBodyEulers_i();
+  int32_t newHeading = eulerAngles->psi + ANGLE_BFP_OF_REAL( incrementDegrees / 180.0 * M_PI);
+  INT32_ANGLE_NORMALIZE(newHeading);
+  *heading = newHeading;
+  return false;
+}

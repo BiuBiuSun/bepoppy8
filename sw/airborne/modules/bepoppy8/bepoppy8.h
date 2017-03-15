@@ -26,6 +26,7 @@ extern void bepoppy8_moveWaypointTo(uint8_t, struct EnuCoor_i *);
 extern void bepoppy8_moveWaypointForward(uint8_t, float);
 extern void coordinateTurn(struct EnuCoor_i *);
 extern float calculateHeading(struct EnuCoor_i *);
+extern uint8_t increase_nav_heading(int32_t *, float);
 
 #endif
 

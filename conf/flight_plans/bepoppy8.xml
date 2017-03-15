@@ -102,7 +102,6 @@
     </block>
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
       <call_once fun="NavSetWaypointHere(WP_GOAL)"/>
-      <set var="trajectoryConfidence" value="1"/>
     </block>
     <block name="StayGoal">
       <call_once fun="bepoppy8_start(WP_GOAL)"/>
@@ -116,7 +115,7 @@
     </block>
     <block name="GetIntoObstacleZone">
       <while cond="!InsideObstacleZone(GetPosX(),GetPosY())">
-        <call_once fun="moveWaypointForward(WP_GOAL, 0.1)"/>
+        <call_once fun="bepoppy8_moveWaypointForward(WP_GOAL, 0.1)"/>
         <go wp="GOAL"/>
       </while>
       <deroute block="START"/>

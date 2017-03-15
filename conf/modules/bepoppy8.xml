@@ -7,8 +7,6 @@
     </description>
   </doc>
 
-  <depends>cv_colorfilter.xml</depends>
-
   <header>
     <file name="bepoppy8.h"/>
   </header>
