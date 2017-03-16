@@ -17,7 +17,10 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "subsystems/datalink/telemetry.h"
 #include "generated/flight_plan.h"
+
 #include "modules/bepoppy8/bepoppy8.h"
+#include "modules/bepoppy8/bepoppy8_cv.h"
+
 
 #if DEBUGGING
 #define logTelemetry(msg)	bepoppy8_logTelemetry(msg, (int) strlen(msg));
@@ -25,9 +28,10 @@
 #define logTelemetry(...)
 #endif
 
+struct video_listener *listener = NULL;
 
 void bepoppy8_init() {
-	// Initial values to be defined at start-up of module
+	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
 
 }
 
@@ -36,6 +40,13 @@ void bepoppy8_periodic() {
 
 }
 
+
+struct image_t *vision_func(struct image_t *img) {
+
+	struct image_t *img2 = process_by_Kmeans(img);
+
+  return img2;
+}
 
 /*
  * Use logTelemetry("message") to send debugging related strings to the terminal and GCS.
@@ -53,7 +64,7 @@ void bepoppy8_periodic() {
  */
 void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 	if (DEBUGGING){
-		DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, nb_msg,  msg);
+		//DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, nb_msg,  msg);
 		printf("%s", msg);
 	}
 }
