@@ -41,12 +41,6 @@ void bepoppy8_periodic() {
 }
 
 
-struct image_t *vision_func(struct image_t *img) {
-
-	struct image_t *img2 = process_by_Kmeans(img);
-
-  return img2;
-}
 
 /*
  * Use logTelemetry("message") to send debugging related strings to the terminal and GCS.

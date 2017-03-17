@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-extern struct image_t *process_by_Kmeans(struct image_t *img);
+extern struct image_t *vision_func(struct image_t *);
 
 #ifdef __cplusplus
 }
