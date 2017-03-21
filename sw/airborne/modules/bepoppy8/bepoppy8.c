@@ -36,9 +36,11 @@ extern uint8_t ClusterDominance(struct ClusterInfo);
 extern uint8_t SafeToGoForwards(uint8_t FloorCluster, uint8_t WindowCluster);
 extern uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster);
 
+float deviate = 10.0;
+float ForwardShift= 0.2;
+
 void bepoppy8_init() {
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
-
 }
 
 void bepoppy8_periodic() {
@@ -48,16 +50,15 @@ void bepoppy8_periodic() {
 	uint8_t DominantWindowCluster = ClusterDominance(Environment);
 	uint8_t safe = SafeToGoForwards(FloorCluster, DominantWindowCluster);
 
-	float deviate = 10.0;
-	float ForwardShift = 0.2;
-
 	if(safe){
 		 bepoppy8_moveWaypointForward(WP_GOAL, ForwardShift);
 	}
 	else
 	{
 		waypoint_set_here_2d(WP_GOAL); //implement something less static
-		if(EscapeLeft){
+		uint8_t goLeft = EscapeLeft(DominantWindowCluster, Environment);
+
+		if(goLeft){
 			 increase_nav_heading(&nav_heading, -deviate);
 		} else{
 			increase_nav_heading(&nav_heading, deviate);
@@ -230,6 +231,55 @@ void bepoppy8_moveWaypointForward(uint8_t waypoint, float distance){
 	// Calculate the shift in position where to place the waypoint you want to go to
 	shift.x                       		= POS_BFP_OF_REAL(sin_heading * distance);
 	shift.y                       		= POS_BFP_OF_REAL(cos_heading * distance);
+
+	bepoppy8_moveWaypointBy(waypoint, &shift);
+}
+
+/*
+ * Reset the waypoint location  close to the current position of the drone
+ *
+ * Untested
+ */
+void bepoppy8_resetWaypoint(uint8_t waypoint){
+
+	struct EnuCoor_i *pos 				= stateGetPositionEnu_i();
+	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
+	struct EnuCoor_i shift;
+	struct EnuCoor_i *new_coor;
+	float distance = 0.5;
+
+	// Calculate the sine and cosine of the heading the drone is keeping
+	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
+	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
+
+	// Calculate the shift in position where to place the waypoint you want to go to
+	shift.x                       		= POS_BFP_OF_REAL(sin_heading * distance);
+	shift.y                       		= POS_BFP_OF_REAL(cos_heading * distance);
+
+	new_coor->x = pos->x + shift.x;
+	new_coor->y = pos->y + shift.y;
+
+	coordinateTurn(&shift);  // Double check the correct heading (should not be required);
+	waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y); 	// Set x,y position of waypoint
+
+}
+
+/*
+ * Move waypoint by a certain heading angle relative to the current heading of the drone
+ *
+ * Untested
+ */
+void bepoppy8_AdjustWaypointBearing(uint8_t waypoint, float distance, float HeadingDefl){
+	struct EnuCoor_i shift;
+	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
+
+	// Calculate the sine and cosine of the heading the drone is keeping
+	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
+	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
+
+	// Calculate the shift in position where to place the waypoint you want to go to
+	shift.x                       		= POS_BFP_OF_REAL( (sin_heading + HeadingDefl) * distance);
+	shift.y                       		= POS_BFP_OF_REAL( (cos_heading + HeadingDefl) * distance);
 
 	bepoppy8_moveWaypointBy(waypoint, &shift);
 }

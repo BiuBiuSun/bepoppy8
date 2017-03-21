@@ -26,9 +26,14 @@ extern void bepoppy8_logTelemetry(char*, int);
 extern void bepoppy8_moveWaypointBy(uint8_t, struct EnuCoor_i *);
 extern void bepoppy8_moveWaypointTo(uint8_t, struct EnuCoor_i *);
 extern void bepoppy8_moveWaypointForward(uint8_t, float);
+extern void bepoppy8_resetWaypoint(uint8_t);
+extern void bepoppy8_AdjustWaypointBearing(uint8_t, float, float);
 extern void coordinateTurn(struct EnuCoor_i *);
 extern float calculateHeading(struct EnuCoor_i *);
 extern uint8_t increase_nav_heading(int32_t *, float);
+
+extern float deviate;
+extern float ForwardShift;
 
 #endif
 
