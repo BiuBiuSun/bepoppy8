@@ -13,45 +13,99 @@ using namespace std;
 #include <opencv2/imgcodecs.hpp>
 using namespace cv;
 
+// Define local fucions:
+Mat uv_channels(struct image_t *);
+void setNavigationParams(struct image_t *, Mat);
 
+/*
+ * vision_func(): The function attached to the listener of the v4l2 device.
+ * 				: Each time a frame is ready, this function is called to process it.
+ */
 struct image_t *vision_func(struct image_t *img) {
 
-	uint8_t *img_buf 	= (uint8_t *) img->buf;
-	int32_t uv_length 	= (img->h)*(img->w)/2;
-	uint8_t attempts 	= 5, clusters = 3;
+	Mat clusterLabels = cluster_image(img);
+	//setNavigationParams(img, clusterLabels);
 
-	Mat uv(uv_length,2, CV_32F), bestLabels, centers, img_rgb, img_out(uv_length*2,1, CV_8UC3);
+  return img;
+}
 
-	double eps 			= 0.001;
-	float scale 		= 255.0/clusters;
+/*
+ * K-means clustering
+ * 	- Uses the K-means algorithm to cluster the image from the bebop camera.
+ *
+ * Input	: struct image_t *	- Image structure, containing info and the image buffer.
+ * Output	: Mat bestLabels 	- A CV_8UC1 Mat containing labels corresponding to which cluster it belongs to, same length as input image.
+ * 			:  					- Image buffer is set to the segmented image.
+ */
+Mat cluster_image(struct image_t *img) {
+		uint8_t *img_buf 	= (uint8_t *) img->buf;			// Get image buffer
+		Mat uv 				= uv_channels(img);				// Get UV channels to workable format for K-means
 
+		// K-means allocation and parameters
+		Mat clusterLabels, centers;
+		uint8_t attempts = 3, clusters = 3;
+		double eps 			= 0.001;
+
+		kmeans(uv, clusters, clusterLabels, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
+
+		if(DEBUGGING) {
+			Mat img_intermediate, img_seg;
+			float scale 		= 255.0/clusters;
+
+			clusterLabels.convertTo(img_intermediate, CV_8UC1, scale, 0);
+			applyColorMap(img_intermediate, img_seg, COLORMAP_JET);
+
+			colorrgb_opencv_to_yuv422(img_seg, (char *) img_buf);
+		}
+
+	return clusterLabels;
+}
+
+/*
+ * Local function to allocate the UV channels to a format k-means is able to process.
+ */
+Mat uv_channels(struct image_t *img) { // TODO: Investigate possible performance gain using: .split(uv Y) transpose(uv) reshape(1,2) transpose(uv)
+	uint8_t img_buf = (uint8_t *) img->buf;
+
+	Mat uv(img->h*img->w*0.5,2,CV_32FC1);
 
 	int index = 0;
-	struct ArrayInfo NavWindowInfo;
-
-	for (int row = 0; row < (img->w); row++) { // Loop over rows:
-		for (int col = 0; col < (img->h)/2; col++) { // Loop over columns:
-			uv.at<float>(col,0) = (float) img_buf[index];	index += 2;
-			uv.at<float>(col,1) = (float) img_buf[index];	index += 2;
+	for (int m = 0; m < img->h; m++) {
+		for (int n = 0; n < img->w; n += 2) {
+			uv.at<float>(m*img->h + n, 0) 	= (float) img_buf[index]; index += 2;
+			uv.at<float>(m*img->h + n, 1) 	= (float) img_buf[index]; index += 2;
 		}
 	}
 
-	NavWindowInfo.ArrayLength = (img->h)/2;
-	NavWindowInfo.InitPoint = uv_length-NavWindowInfo.ArrayLength;
+	return uv;
+}
 
-	kmeans(uv, clusters, bestLabels, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
+/*
+ * Navigation Parameters
+ * 	- Sets parameters used in the periodic function to navigate through the CyberZoo
+ *
+ * Inputs	: uint32_t img_width, img_height 	- The height and width of the image in pixels.
+ * 			: Mat bestLabels 					- A CV_8UC1 Mat containing labels corresponding to which cluster it belongs to, same length as input image.
+ * Outputs	: 									- Sets global variables, so periodic function can use those to determine its actions.
+ */
+void setNavigationParams(struct image_t *img, Mat clusterLabels) {
+	// TODO: Make thread safe!
 
+	struct ArrayInfo NavWindowInfo;
 	uint8_t element;
 
-	uint8_t WindowReference = NavWindowInfo.InitPoint + NavWindowInfo.ArrayLength/2;
-	WindowHalfSize = 40;
-	struct Window AvoidWindow = {WindowReference-WindowHalfSize, WindowReference+WindowHalfSize};
+	NavWindowInfo.ArrayLength 	= (img->h)*0.5;
+	NavWindowInfo.InitPoint 	= (img->h)*(img->w)*0.5-NavWindowInfo.ArrayLength;
+
+	uint8_t WindowReference 	= NavWindowInfo.InitPoint + NavWindowInfo.ArrayLength/2;
+	WindowHalfSize 				= 40; // TODO: Move to init?
+	struct Window AvoidWindow 	= {WindowReference-WindowHalfSize, WindowReference+WindowHalfSize};
 
 	Environment = {0,0,0,0,0,0};
 
 	for(element = NavWindowInfo.InitPoint; NavWindowInfo.ArrayLength; element++){
 
-		if(bestLabels.at<int>(element)==0){
+		if(clusterLabels.at<int>(element)==0){
 			Environment.Cl1Global++;
 			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
 				Environment.Cl1AvoidLeft++;
@@ -59,7 +113,7 @@ struct image_t *vision_func(struct image_t *img) {
 				Environment.Cl1AvoidRight++;
 			}
 		}
-		else if(bestLabels.at<int>(element)==1){
+		else if(clusterLabels.at<int>(element)==1){
 			Environment.Cl2Global++;
 			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
 				Environment.Cl2AvoidLeft++;
@@ -67,7 +121,7 @@ struct image_t *vision_func(struct image_t *img) {
 				Environment.Cl2AvoidRight++;
 			}
 		}
-		else if(bestLabels.at<int>(element)==2){
+		else if(clusterLabels.at<int>(element)==2){
 			Environment.Cl3Global++;
 			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
 				Environment.Cl3AvoidLeft++;
@@ -78,20 +132,16 @@ struct image_t *vision_func(struct image_t *img) {
 
 	}
 
-
-	/*
-	bestLabels.convertTo(bestLabels, CV_8UC1, scale,0);
-	applyColorMap(bestLabels, img_rgb, COLORMAP_JET);
-
-
-	for (int i = 0; i < uv_length; i++) {
-		img_out.at<uint8_t>(2*i,0), img_out.at<uint8_t>(2*i+1,0) = img_rgb.at<uint8_t>(i,0);
-	}
-
-	// img_out.reshape(0, img->w); Not needed if my reasoning is correct
-
-
-	colorrgb_opencv_to_yuv422(img_out,(char *) img_buf); // Set buffer to clustered image */
-
-  return img;
 }
+
+
+
+
+
+
+
+
+
+
+
+
