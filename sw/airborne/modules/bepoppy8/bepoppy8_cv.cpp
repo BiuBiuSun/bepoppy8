@@ -27,15 +27,59 @@ struct image_t *vision_func(struct image_t *img) {
 
 
 	int index = 0;
+	struct ArrayInfo NavWindowInfo;
+
 	for (int row = 0; row < (img->w); row++) { // Loop over rows:
-		for (int col = 0; col < (img->h)/2; col++) { // Loop over collumns:
+		for (int col = 0; col < (img->h)/2; col++) { // Loop over columns:
 			uv.at<float>(col,0) = (float) img_buf[index];	index += 2;
 			uv.at<float>(col,1) = (float) img_buf[index];	index += 2;
 		}
 	}
 
+	NavWindowInfo.ArrayLength = (img->h)/2;
+	NavWindowInfo.InitPoint = uv_length-NavWindowInfo.ArrayLength;
+
 	kmeans(uv, clusters, bestLabels, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
 
+	uint8_t element;
+
+	uint8_t WindowReference = NavWindowInfo.InitPoint + NavWindowInfo.ArrayLength/2;
+	WindowHalfSize = 40;
+	struct Window AvoidWindow = {WindowReference-WindowHalfSize, WindowReference+WindowHalfSize};
+
+	Environment = {0,0,0,0,0,0};
+
+	for(element = NavWindowInfo.InitPoint; NavWindowInfo.ArrayLength; element++){
+
+		if(bestLabels.at<int>(element)==0){
+			Environment.Cl1Global++;
+			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
+				Environment.Cl1AvoidLeft++;
+			} else if(element >= WindowReference && element <= AvoidWindow.RightBoundary){
+				Environment.Cl1AvoidRight++;
+			}
+		}
+		else if(bestLabels.at<int>(element)==1){
+			Environment.Cl2Global++;
+			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
+				Environment.Cl2AvoidLeft++;
+			} else if(element >= WindowReference && element <= AvoidWindow.RightBoundary){
+				Environment.Cl2AvoidRight++;
+			}
+		}
+		else if(bestLabels.at<int>(element)==2){
+			Environment.Cl3Global++;
+			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
+				Environment.Cl3AvoidLeft++;
+			} else if(element >= WindowReference && element <= AvoidWindow.RightBoundary){
+				Environment.Cl3AvoidRight++;
+			}
+		} else continue;
+
+	}
+
+
+	/*
 	bestLabels.convertTo(bestLabels, CV_8UC1, scale,0);
 	applyColorMap(bestLabels, img_rgb, COLORMAP_JET);
 
@@ -47,6 +91,7 @@ struct image_t *vision_func(struct image_t *img) {
 	// img_out.reshape(0, img->w); Not needed if my reasoning is correct
 
 
-	colorrgb_opencv_to_yuv422(img_out,(char *) img_buf); // Set buffer to clustered image
+	colorrgb_opencv_to_yuv422(img_out,(char *) img_buf); // Set buffer to clustered image */
+
   return img;
 }

@@ -30,6 +30,12 @@
 
 struct video_listener *listener = NULL;
 
+// Declare functions - why does this not work when using the header file?
+extern uint8_t SearchFloor(struct ClusterInfo);
+extern uint8_t ClusterDominance(struct ClusterInfo);
+extern uint8_t SafeToGoForwards(uint8_t FloorCluster, uint8_t WindowCluster);
+extern uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster);
+
 void bepoppy8_init() {
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
 
@@ -38,9 +44,91 @@ void bepoppy8_init() {
 void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 
+	uint8_t FloorCluster = SearchFloor(Environment);
+	uint8_t DominantWindowCluster = ClusterDominance(Environment);
+	uint8_t safe = SafeToGoForwards(FloorCluster, DominantWindowCluster);
+
+	float deviate = 10.0;
+	float ForwardShift = 0.2;
+
+	if(safe){
+		 bepoppy8_moveWaypointForward(WP_GOAL, ForwardShift);
+	}
+	else
+	{
+		waypoint_set_here_2d(WP_GOAL); //implement something less static
+		if(EscapeLeft){
+			 increase_nav_heading(&nav_heading, -deviate);
+		} else{
+			increase_nav_heading(&nav_heading, deviate);
+		}
+	}
+}
+
+uint8_t SearchFloor(struct ClusterInfo Clusters)
+{
+	uint8_t RefCluster = 0;
+
+	if(Clusters.Cl2Global>=Clusters.Cl1Global)
+	{
+		RefCluster = 1;
+	}
+	else if(Clusters.Cl3Global>=Clusters.Cl2Global)
+	{
+		RefCluster = 2;
+	}
+	return RefCluster;
 }
 
 
+uint8_t ClusterDominance(struct ClusterInfo Clusters)
+{
+	uint8_t WindowDominance = 0;
+
+	if( (Clusters.Cl2AvoidLeft+Clusters.Cl2AvoidRight) >= (Clusters.Cl1AvoidLeft+Clusters.Cl1AvoidRight) )
+	{
+		WindowDominance = 1;
+	}
+	else if( (Clusters.Cl3AvoidLeft+Clusters.Cl3AvoidRight) >= (Clusters.Cl2AvoidLeft+Clusters.Cl2AvoidRight) )
+	{
+		WindowDominance = 2;
+	}
+
+	return WindowDominance;
+}
+
+uint8_t SafeToGoForwards(uint8_t FloorCluster, uint8_t WindowCluster)
+{
+if(WindowCluster == FloorCluster)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster)
+{
+	uint8_t goLeft;
+	if(WindowDominance == 0)
+	{
+		if(Cluster.Cl1AvoidLeft > Cluster.Cl1AvoidRight){goLeft=1;}
+		else goLeft=0;
+	}
+	else if(WindowDominance == 1)
+	{
+		if(Cluster.Cl2AvoidLeft > Cluster.Cl2AvoidRight){goLeft=1;}
+		else goLeft=0;
+	}
+	else
+	{
+		if(Cluster.Cl3AvoidLeft > Cluster.Cl3AvoidRight){goLeft=1;}
+		else goLeft=0;
+	}
+	return goLeft;
+}
 
 /*
  * Use logTelemetry("message") to send debugging related strings to the terminal and GCS.
