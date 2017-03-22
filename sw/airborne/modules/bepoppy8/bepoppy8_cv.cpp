@@ -15,6 +15,7 @@ using namespace cv;
 
 // Define local fucions:
 Mat uv_channels(struct image_t *);
+Mat cluster_image(struct image_t *img);
 void setNavigationParams(struct image_t *, Mat);
 
 /*
@@ -65,7 +66,7 @@ Mat cluster_image(struct image_t *img) {
  * Local function to allocate the UV channels to a format k-means is able to process.
  */
 Mat uv_channels(struct image_t *img) { // TODO: Investigate possible performance gain using: .split(uv Y) transpose(uv) reshape(1,2) transpose(uv)
-	uint8_t img_buf = (uint8_t *) img->buf;
+	uint8_t *img_buf = (uint8_t *) img->buf;
 
 	Mat uv(img->h*img->w*0.5,2,CV_32FC1);
 
