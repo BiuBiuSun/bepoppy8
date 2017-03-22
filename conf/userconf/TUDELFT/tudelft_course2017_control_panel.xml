@@ -15,11 +15,14 @@
     <program name="Log File Player" command="sw/logalizer/play"/>
     <program name="Simulator" command="sw/simulator/pprzsim-launch"/>
     <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-      <arg flag="-ac" constant="@AIRCRAFT"/>
-      <arg flag="hobbyking.xml"/>
+	<arg flag="-d" constant="1"/>      
+	<arg flag="-ac" constant="@AIRCRAFT"/>
+      	<arg flag="frsky.xml"/>
     </program>
     <program name="Environment Simulator" command="sw/simulator/gaia"/>
-    <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy"/>
+    <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
+	<arg flag="-ac 9999" constant="@AC_ID"/>
+    </program>
   </section>
   <section name="sessions">
     <session name="Bebop basic">
@@ -31,32 +34,32 @@
         <arg flag="-speech"/>
       </program>
       <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-        <arg flag="-ac" constant="@AIRCRAFT"/>
-        <arg flag="hobbyking.xml"/>
+	<arg flag="-d" constant="1"/>       
+	<arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="frsky.xml"/>
       </program>
       <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
       <arg flag="-ac 9999" constant="@AC_ID"/>
     	</program>
-       <program name="Bebop Video Stream"/>
+       
     </session>
-   <session name="Bebop extensive">
-      <program name="Data Link">
-        <arg flag="-udp"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
-      <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-        <arg flag="-d" constant="2"/>
-        <arg flag="-ac" constant="@AIRCRAFT"/>
-        <arg flag="hobbyking.xml"/>
-      </program>
-     <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
-      <arg flag="-ac 3" constant="@AC_ID"/>
-    </program>
-
-      <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
+   	<session name="Bebop extensive">
+      	<program name="Data Link">
+        	<arg flag="-udp"/>
+      	</program>
+      	<program name="Server"/>
+      	<program name="GCS">
+        	<arg flag="-speech"/>
+      	</program>
+      	<program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
+        	<arg flag="-d" constant="1"/>
+        	<arg flag="-ac" constant="@AIRCRAFT"/>
+        	<arg flag="frsky.xml"/>
+      	</program>
+     	<program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
+      		<arg flag="-ac 3" constant="@AC_ID"/>
+    	</program>
+      	<program name="Messages" command="sw/ground_segment/tmtc/messages"/>
     </session>
 
   </section>
