@@ -116,4 +116,3 @@ void setNavigationParam(uint32_t img_width, uint32_t img_height, Mat bestLabels)
 	}
 
 }
-
