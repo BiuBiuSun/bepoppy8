@@ -18,9 +18,6 @@ Mat uv_channels(struct image_t *);
 Mat cluster_image(struct image_t *);
 void setNavigationParams(struct image_t *, Mat);
 
-
-
-
 /*
  * vision_func(): The function attached to the listener of the v4l2 device.
  * 				: Each time a frame is ready, this function is called to process it.
@@ -69,7 +66,7 @@ Mat cluster_image(struct image_t *img) {
  * Local function to allocate the UV channels to a format k-means is able to process.
  */
 Mat uv_channels(struct image_t *img) { // TODO: Investigate possible performance gain using: .split(uv Y) transpose(uv) reshape(1,2) transpose(uv)
-	uint8_t *img_buf = (uint8_t *) img->buf;
+	uint8_t img_buf = (uint8_t *) img->buf;
 
 	Mat uv(img->h*img->w*0.5,2,CV_32FC1);
 
@@ -102,9 +99,10 @@ void setNavigationParams(struct image_t *img, Mat clusterLabels) {
 	NavWindowInfo.InitPoint 	= (img->h)*(img->w)*0.5-NavWindowInfo.ArrayLength;
 
 	uint8_t WindowReference 	= NavWindowInfo.InitPoint + NavWindowInfo.ArrayLength/2;
+	WindowHalfSize 				= 40; // TODO: Move to init?
 	struct Window AvoidWindow 	= {WindowReference-WindowHalfSize, WindowReference+WindowHalfSize};
 
-	Environment = {0,0,0,0,0,0,0,0,0};
+	Environment = {0,0,0,0,0,0};
 
 	for(element = NavWindowInfo.InitPoint; NavWindowInfo.ArrayLength; element++){
 
