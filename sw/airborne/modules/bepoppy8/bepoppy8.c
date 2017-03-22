@@ -36,11 +36,11 @@ extern uint8_t ClusterDominance(struct ClusterInfo);
 extern uint8_t SafeToGoForwards(uint8_t FloorCluster, uint8_t WindowCluster);
 extern uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster);
 
-float deviate = 10.0;
-float ForwardShift= 0.2;
-
 void bepoppy8_init() {
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
+	WindowHalfSize 				= 40;
+	deviate 					= 20.0;
+	ForwardShift				= 0.2;
 }
 
 void bepoppy8_periodic() {
@@ -55,12 +55,16 @@ void bepoppy8_periodic() {
 	}
 	else
 	{
-		waypoint_set_here_2d(WP_GOAL); //implement something less static
+		bepoppy8_resetWaypoint(WP_GOAL);
+
 		uint8_t goLeft = EscapeLeft(DominantWindowCluster, Environment);
 
 		if(goLeft){
-			 increase_nav_heading(&nav_heading, -deviate);
-		} else{
+			bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, -deviate);
+			increase_nav_heading(&nav_heading, -deviate);
+		}
+		else{
+			bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, deviate);
 			increase_nav_heading(&nav_heading, deviate);
 		}
 	}
@@ -195,7 +199,6 @@ void bepoppy8_moveWaypointBy(uint8_t waypoint, struct EnuCoor_i *shift){
 	waypoint_set_xy_i(waypoint, new_coor.x, new_coor.y); 	// Set x,y position of waypoint
 
 }
-
 
 /*
  * Move the current waypoint to the location defined by *new_coor.

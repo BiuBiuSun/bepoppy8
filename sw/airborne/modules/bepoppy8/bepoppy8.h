@@ -32,8 +32,8 @@ extern void coordinateTurn(struct EnuCoor_i *);
 extern float calculateHeading(struct EnuCoor_i *);
 extern uint8_t increase_nav_heading(int32_t *, float);
 
-extern float deviate;
-extern float ForwardShift;
+float deviate;
+float ForwardShift;
 
 #endif
 
