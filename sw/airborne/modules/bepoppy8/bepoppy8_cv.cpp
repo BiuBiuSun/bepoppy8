@@ -50,10 +50,16 @@ Mat cluster_image(struct image_t *img) {
 
 		// K-means allocation and parameters
 		Mat clusterLabels, centers;
+	    static Mat init_cluster;
 		uint8_t attempts = 1, clusters = 3;
 		double eps 			= 0.001;
 		printf("cluster init done\n");
-		kmeans(uv, clusters, clusterLabels, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
+		if (init_cluster.empty()){
+			kmeans(uv, clusters, init_cluster, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
+			printf("EMPTY\n");
+		}
+		kmeans(uv, clusters, init_cluster, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_USE_INITIAL_LABELS, centers);
+		clusterLabels = init_cluster;
 
 		//write_clusterLabels(clusterLabels);
 
