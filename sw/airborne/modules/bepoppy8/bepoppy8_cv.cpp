@@ -13,7 +13,7 @@ using namespace std;
 #include <opencv2/imgcodecs.hpp>
 using namespace cv;
 
-// Define local fucions:
+// Define local functions:
 Mat uv_channels(struct image_t *);
 Mat cluster_image(struct image_t *);
 void setNavigationParams(struct image_t *, Mat);
@@ -55,18 +55,27 @@ Mat cluster_image(struct image_t *img) {
 		printf("cluster init done\n");
 		kmeans(uv, clusters, clusterLabels, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
 
-		write_clusterLabels(clusterLabels);
+		//write_clusterLabels(clusterLabels);
 
-//		if(DEBUGGING) {
-//			Mat img_intermediate, img_seg;
-//			float scale 		= 255.0/clusters;
-//
-//			clusterLabels.convertTo(img_intermediate, CV_8UC1, scale, 0);
-//			applyColorMap(img_intermediate, img_seg, COLORMAP_JET);
-//			printf("most of debugging working\n");
-//
-//			colorrgb_opencv_to_yuv422(img_seg, (char *) img_buf);
-//		}
+		if(DEBUGGING) {
+			Mat img_intermediate(2*clusterLabels.rows,1,CV_32SC1), img_intermediate2, img_seg;
+			float scale 		= 255.0/clusters;
+
+			printf("clusterLabels: Rows: %d Cols: %d Channels: %d Type: %d" , clusterLabels.rows, clusterLabels.cols, clusterLabels.channels(), clusterLabels.type());
+
+			// Restore size of UV:
+			for (int i = 0; i < clusterLabels.rows; i++) {
+				img_intermediate.at<float>(2*i) 	= clusterLabels.at<float>(i);
+				img_intermediate.at<float>(2*i + 1) = clusterLabels.at<float>(i);
+			}
+
+
+			img_intermediate.convertTo(img_intermediate2, CV_8UC1, scale, 0);
+			applyColorMap(img_intermediate2, img_seg, COLORMAP_JET);
+			printf("most of debugging working\n");
+
+			colorrgb_opencv_to_yuv422(img_seg, (char *) img_buf);
+		}
 		printf("[cluster_image()] Finished\n");
 	return clusterLabels;
 }
@@ -117,9 +126,9 @@ void setNavigationParams(struct image_t *img, Mat clusterLabels) {
 	WindowHalfSize 				= 40; // TODO: Move to init?
 	struct Window AvoidWindow 	= {WindowReference-WindowHalfSize, WindowReference+WindowHalfSize};
 
-	Environment = {0,0,0,0,0,0};
+	Environment = {0,0,0,0,0,0,0,0,0};
 
-	for(element = NavWindowInfo.InitPoint; NavWindowInfo.ArrayLength; element++){
+	for(element = NavWindowInfo.InitPoint; element < NavWindowInfo.ArrayLength; element++){
 
 		if(clusterLabels.at<int>(element)==0){
 			Environment.Cl1Global++;
