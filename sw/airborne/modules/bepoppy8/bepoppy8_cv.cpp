@@ -17,6 +17,8 @@ using namespace cv;
 Mat uv_channels(struct image_t *);
 Mat cluster_image(struct image_t *);
 void setNavigationParams(struct image_t *, Mat);
+void write_clusterLabels(Mat);
+Mat load_clusterLabels();
 
 
 
@@ -25,10 +27,10 @@ void setNavigationParams(struct image_t *, Mat);
  * 				: Each time a frame is ready, this function is called to process it.
  */
 struct image_t *vision_func(struct image_t *img) {
-
+	printf("[vision_func()] Started\n");
 	Mat clusterLabels = cluster_image(img);
-	setNavigationParams(img, clusterLabels);
-
+	//setNavigationParams(img, clusterLabels);
+	printf("[vision_func()] Finished\n");
   return img;
 }
 
@@ -41,7 +43,7 @@ struct image_t *vision_func(struct image_t *img) {
  * 			:  					- Image buffer is set to the segmented image.
  */
 Mat cluster_image(struct image_t *img) {
-		printf("cluster starting\n");
+		printf("[cluster_image()] Start\n");
 		uint8_t *img_buf 	= (uint8_t *) img->buf;			// Get image buffer
 		printf("cluster imgbuf\n");
 		Mat uv 				= uv_channels(img);				// Get UV channels to workable format for K-means
@@ -53,6 +55,8 @@ Mat cluster_image(struct image_t *img) {
 		printf("cluster init done\n");
 		kmeans(uv, clusters, clusterLabels, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
 
+		write_clusterLabels(clusterLabels);
+
 //		if(DEBUGGING) {
 //			Mat img_intermediate, img_seg;
 //			float scale 		= 255.0/clusters;
@@ -63,7 +67,7 @@ Mat cluster_image(struct image_t *img) {
 //
 //			colorrgb_opencv_to_yuv422(img_seg, (char *) img_buf);
 //		}
-		printf("cluster finished\n");
+		printf("[cluster_image()] Finished\n");
 	return clusterLabels;
 }
 
@@ -71,34 +75,24 @@ Mat cluster_image(struct image_t *img) {
  * Local function to allocate the UV channels to a format k-means is able to process.
  */
 Mat uv_channels(struct image_t *img) { // TODO: Investigate possible performance gain using: .split(uv Y) transpose(uv) reshape(1,2) transpose(uv)
-	printf("0\n");
+	printf("[uv_channels()] Started\n");
 	uint8_t *img_buf = (uint8_t *) img->buf;
-	printf("1\n");
+	printf("[uv_channels()] 1\n");
 	Mat uv(img->h*img->w*0.5,2,CV_32FC1); // reshape to 2 rows
-	printf("2\n");
-	int index = 0;
+	printf("[uv_channels()]2\n");
 
 	printf("%d\n",img->h);
 
 	for (uint16_t y = 0; y < img->h; y++) {
 	    for (uint16_t x = 0; x < img->w; x += 2) {
-//	    	printf("%d\n",x);
-	    	uv.at<float>(y*img->w + x/2, 0) = img_buf[0]; // U
-	    	uv.at<float>(y*img->w + x/2, 1) = img_buf[2]; // V
+	    	uv.at<float>((y*img->w + x)/2, 0) = img_buf[0]; // U
+	    	uv.at<float>((y*img->w + x)/2, 1) = img_buf[2]; // V
 	    	img_buf += 4;
 	    }
 
 	}
 
-//	for (int m = 0; m < img->h; m++) {
-//		for (int n = 0; n < img->w; n += 2) {
-//			(float) img_buf[index];
-////			printef("%d\n", index);
-//			uv.at<float>(m*img->w + n, 0) 	= (float) img_buf[index]; index += 2; // U
-//			uv.at<float>(m*img->w + n, 1) 	= (float) img_buf[index]; index += 2; // V
-//		}
-//	}
-	printf("done uv seg\n");
+	printf("[uv_channels()] Done\n");
 	return uv;
 }
 
@@ -154,4 +148,29 @@ void setNavigationParams(struct image_t *img, Mat clusterLabels) {
 
 	}
 
+}
+
+/*
+ * Write the clusterLabels file to .txt files for post processing and nav testing.
+ */
+void write_clusterLabels(Mat clusterLabels) {
+
+	// write Mat to file
+	FileStorage fs("file.xml", FileStorage::WRITE);
+	fs << "clusterLabels" << clusterLabels;
+
+	fs.release();
+
+}
+
+Mat load_clusterLabels() {
+	Mat clusterLabels;
+
+	// read Mat from file
+	FileStorage fs("file.xml", FileStorage::READ);
+	fs["clusterLabels"] >> clusterLabels;
+
+	fs.release();
+
+	return clusterLabels;
 }
