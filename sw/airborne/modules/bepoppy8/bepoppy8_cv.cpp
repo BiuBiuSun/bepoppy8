@@ -19,6 +19,7 @@ Mat cluster_image(struct image_t *);
 void setNavigationParams(struct image_t *, Mat);
 void write_clusterLabels(Mat);
 Mat load_clusterLabels();
+void yuv_to_yuv422(Mat image, char *img);
 
 
 
@@ -67,21 +68,26 @@ Mat cluster_image(struct image_t *img) {
 			Mat img_intermediate(2*clusterLabels.rows,1,CV_32SC1), img_intermediate2, img_seg;
 			float scale 		= 255.0/clusters;
 
-			printf("clusterLabels: Rows: %d Cols: %d Channels: %d Type: %d" , clusterLabels.rows, clusterLabels.cols, clusterLabels.channels(), clusterLabels.type());
+			printf("clusterLabels: Rows: %d Cols: %d Channels: %d Type: %d\n" , clusterLabels.rows, clusterLabels.cols, clusterLabels.channels(), clusterLabels.type());
 
+			int index = 0;
 			// Restore size of UV:
 			for (int i = 0; i < clusterLabels.rows; i++) {
 				img_intermediate.at<float>(2*i) 	= clusterLabels.at<float>(i);
 				img_intermediate.at<float>(2*i + 1) = clusterLabels.at<float>(i);
+				index++;
 			}
+			printf("Length of restore loop: %d\n", index);
 
 
 			img_intermediate.convertTo(img_intermediate2, CV_8UC1, scale, 0);
 			applyColorMap(img_intermediate2, img_seg, COLORMAP_JET);
-			printf("img_seg: Rows: %d Cols: %d Channels: %d Type: %d" , img_seg.rows, img_seg.cols, img_seg.channels(), img_seg.type());
+			printf("img_seg: Rows: %d Cols: %d Channels: %d Type: %d\n" , img_seg.rows, img_seg.cols, img_seg.channels(), img_seg.type());
 			printf("most of debugging working\n");
 
-			colorrgb_opencv_to_yuv422(img_seg, (char *) img_buf);
+			cvtColor(img_seg, img_seg, COLOR_BGR2YUV);
+			printf("About to yuv2yuv422\n");
+			yuv_to_yuv422(img_seg, (char *) img_buf);
 		}
 		printf("[cluster_image()] Finished\n");
 	return clusterLabels;
@@ -189,4 +195,22 @@ Mat load_clusterLabels() {
 	fs.release();
 
 	return clusterLabels;
+}
+
+void yuv_to_yuv422(Mat image, char *img) {
+  CV_Assert(image.depth() == CV_8U);
+  CV_Assert(image.channels() == 3);
+
+  int nRows = image.rows;
+  int nCols = image.cols;
+
+  uchar *p;
+  int index_img = 0;
+  p = image.ptr<uchar>(0);
+  for (int j = 0; j < nRows*nCols*3; j += 6) {
+	img[index_img++] = p[j + 1]; //U
+	img[index_img++] = p[j];//Y
+	img[index_img++] = p[j + 2]; //V
+	img[index_img++] = p[j + 3]; //Y
+  }
 }
