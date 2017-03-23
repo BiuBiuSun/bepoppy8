@@ -37,15 +37,18 @@ extern uint8_t SafeToGoForwards(uint8_t FloorCluster, uint8_t WindowCluster);
 extern uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster);
 
 void bepoppy8_init() {
+	printf("[bepoppy8_init()] Start\n");
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
 	WindowHalfSize 				= 40;
 	deviate 					= 20.0;
 	ForwardShift				= 0.2;
+
+	printf("[bepoppy8_init()] Finished\n");
 }
 
 void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
-
+	printf("[bepoppy8_periodic()] Start\n");
 	uint8_t FloorCluster = SearchFloor(Environment);
 	uint8_t DominantWindowCluster = ClusterDominance(Environment);
 	uint8_t safe = SafeToGoForwards(FloorCluster, DominantWindowCluster);
@@ -68,6 +71,7 @@ void bepoppy8_periodic() {
 			increase_nav_heading(&nav_heading, deviate);
 		}
 	}
+	printf("[bepoppy8_periodic()] Finished\n");
 }
 
 uint8_t SearchFloor(struct ClusterInfo Clusters)
@@ -192,7 +196,7 @@ void bepoppy8_moveWaypointBy(uint8_t waypoint, struct EnuCoor_i *shift){
 	logTelemetry(msg);
 	asprintf(&msg, "Current Heading: %f", ANGLE_FLOAT_OF_BFP(nav_heading));
 	logTelemetry(msg);
-	asprintf(&msg, "Desired Heading: %f", calculateHeading(shift));
+	asprintf(&msg, "Desired Heading: %f\n", calculateHeading(shift));
 	logTelemetry(msg);
 
 	coordinateTurn(shift); 									// Turn toward new waypoint location.
