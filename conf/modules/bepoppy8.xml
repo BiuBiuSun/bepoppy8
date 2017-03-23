@@ -1,0 +1,43 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="bepoppy8">
+  <doc>
+    <description>
+      Object Avoidance in the TU Delft CyberZoo using the onboard sensors of the Parrot Bebop Drone
+    </description>
+  </doc>
+
+  <header>
+    <file name="bepoppy8.h"/>
+  </header>
+
+  <init fun="bepoppy8_init()"/>
+  <periodic fun="bepoppy8_periodic()" freq="0.1"/>
+  
+  <makefile target="ap">
+    <file name="bepoppy8.c"/>
+    <file name="bepoppy8_cv.cpp"/>
+    <file name="../computer_vision/opencv_image_functions.cpp"/>
+    
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install/include"/>
+    
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install/lib" />
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install/share/OpenCV/3rdparty/lib" />
+    
+    <flag name="LDFLAGS" value="lopencv_world" />
+    <flag name="LDFLAGS" value="ltegra_hal" />
+    <flag name="LDFLAGS" value="llibjpeg" />
+    <flag name="LDFLAGS" value="llibtiff" />
+    
+    <flag name="LDFLAGS" value="lzlib" />
+    <flag name="LDFLAGS" value="llibpng" />
+    <flag name="LDFLAGS" value="lstdc++" />
+    <flag name="LDFLAGS" value="ldl" />
+    <flag name="LDFLAGS" value="lm" />
+    <flag name="LDFLAGS" value="lpthread" />
+    <flag name="LDFLAGS" value="lrt" />
+  </makefile>
+
+</module>
+
+

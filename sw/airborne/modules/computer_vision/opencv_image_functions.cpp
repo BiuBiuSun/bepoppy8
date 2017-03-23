@@ -71,6 +71,7 @@ void colorrgb_opencv_to_yuv422(Mat image, char *img)
   // Convert to YUV color space
   cvtColor(image, image, COLOR_BGR2YUV);
   // then call the to color function
+  printf("cvtcolor done\n");
   coloryuv_opencv_to_yuv422(image, img);
 }
 

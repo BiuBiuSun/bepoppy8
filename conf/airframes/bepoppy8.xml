@@ -1,4 +1,4 @@
-<!DOCTYPE airframe SYSTEM "../airframe.dtd">
+<!DOCTYPE airframe SYSTEM "./airframe.dtd">
 
 <airframe name="bebop_avoider">
 	<firmware name="rotorcraft">
@@ -51,18 +51,14 @@
 			<define name="CV_AE_AWB_AV" value="1" />
 			<define name="CV_AE_AWB_VERBOSE" value="0" />
 		</module>
-		<module name="cv_colorfilter">
-			<define name="COLORFILTER_CAMERA" value="front_camera" />
-		</module>
-		<module name="orange_avoider" />
 		<module name="video_rtp_stream">
-			<configure name="VIEWVIDEO_HOST" value="192.168.42.9" />
+			<configure name="VIEWVIDEO_HOST" value="192.168.42.80" />
 			<configure name="VIEWVIDEO_BROADCAST" value="FALSE" />
 			<define name="VIEWVIDEO_CAMERA" value="front_camera" />
 			<define name="VIEWVIDEO_SHOT_PATH" value="/data/ftp/internal_000" />
 			<define name="VIEWVIDEO_FPS" value="18" />
 			<define name="VIEWVIDEO_WRITE_VIDEO" value="FALSE" />
-			<define name="VIEWVIDEO_VIDEO_FILE" value="orangeAvoider" />
+			<define name="VIEWVIDEO_VIDEO_FILE" value="bepoppy8" />
 			<define name="VIEWVIDEO_STREAM_VIDEO" value="TRUE" />
 		</module>
 		<module name="bepoppy8" />
@@ -162,7 +158,7 @@
 		<!-- reference acceleration for attitude control -->
 		<define name="REF_ERR_P" value="600.0" />
 		<define name="REF_ERR_Q" value="600.0" />
-		<define name="REF_ERR_R" value="600.0" />
+		<define name="REF_ERR_R" value="100.0" />
 		<define name="REF_RATE_P" value="28.0" />
 		<define name="REF_RATE_Q" value="28.0" />
 		<define name="REF_RATE_R" value="28.0" />
