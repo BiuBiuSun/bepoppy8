@@ -72,6 +72,7 @@ Mat cluster_image(struct image_t *img) {
 
 			img_intermediate.convertTo(img_intermediate2, CV_8UC1, scale, 0);
 			applyColorMap(img_intermediate2, img_seg, COLORMAP_JET);
+			printf("img_seg: Rows: %d Cols: %d Channels: %d Type: %d" , img_seg.rows, img_seg.cols, img_seg.channels(), img_seg.type());
 			printf("most of debugging working\n");
 
 			colorrgb_opencv_to_yuv422(img_seg, (char *) img_buf);
