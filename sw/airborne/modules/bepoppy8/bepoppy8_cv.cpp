@@ -17,6 +17,8 @@ using namespace cv;
 Mat uv_channels(struct image_t *);
 Mat cluster_image(struct image_t *);
 void setNavigationParams(struct image_t *, Mat);
+void write_clusterLabels(Mat);
+Mat load_clusterLabels();
 
 
 
@@ -52,6 +54,8 @@ Mat cluster_image(struct image_t *img) {
 		double eps 			= 0.001;
 		printf("cluster init done\n");
 		kmeans(uv, clusters, clusterLabels, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
+
+		write_clusterLabels(clusterLabels);
 
 //		if(DEBUGGING) {
 //			Mat img_intermediate, img_seg;
@@ -144,4 +148,29 @@ void setNavigationParams(struct image_t *img, Mat clusterLabels) {
 
 	}
 
+}
+
+/*
+ * Write the clusterLabels file to .txt files for post processing and nav testing.
+ */
+void write_clusterLabels(Mat clusterLabels) {
+
+	// write Mat to file
+	FileStorage fs("file.xml", FileStorage::WRITE);
+	fs << "clusterLabels" << clusterLabels;
+
+	fs.release();
+
+}
+
+Mat load_clusterLabels() {
+	Mat clusterLabels;
+
+	// read Mat from file
+	FileStorage fs("file.xml", FileStorage::READ);
+	fs["clusterLabels"] >> clusterLabels;
+
+	fs.release();
+
+	return clusterLabels;
 }
