@@ -29,30 +29,22 @@ extern struct image_t *vision_func(struct image_t *);
 #endif
 
 struct ArrayInfo{
-	uint8_t InitPoint;;
-	uint8_t ArrayLength;
+	uint8_t InitPoint = 0;
+	uint8_t ArrayLength = 0;
 };
 
-uint8_t WindowHalfSize;
-
-struct Window{
-	uint8_t LeftBoundary;
-	uint8_t RightBoundary;
-};
+int rowScans = 5;
 
 struct ClusterInfo{
-	uint8_t Cl1Global;
-	uint8_t Cl2Global;
-	uint8_t Cl3Global;
-	uint8_t Cl1AvoidLeft;
-	uint8_t Cl2AvoidLeft;
-	uint8_t Cl3AvoidLeft;
-	uint8_t Cl1AvoidRight;
-	uint8_t Cl2AvoidRight;
-	uint8_t Cl3AvoidRight;
+	uint8_t Cl0Global = 0;
+	uint8_t Cl1Global = 0;
+	uint8_t Cl2Global = 0;
 };
 
 struct ClusterInfo Environment;
+
+uchar FloorID = 0;
+int NavWindow = 0;
 
 
 

@@ -39,9 +39,9 @@ extern uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster);
 void bepoppy8_init() {
 	printf("[bepoppy8_init()] Start\n");
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
-	WindowHalfSize 				= 40;
-	deviate 					= 20.0;
 	ForwardShift				= 0.2;
+	FOV 						= 130.0; //degrees
+	WindowAngle 				= FOV/NUM_WINDOWS;
 
 	printf("[bepoppy8_init()] Finished\n");
 }
@@ -49,94 +49,15 @@ void bepoppy8_init() {
 void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 	printf("[bepoppy8_periodic()] Start\n");
-	uint8_t FloorCluster = SearchFloor(Environment);
-	uint8_t DominantWindowCluster = ClusterDominance(Environment);
-	uint8_t safe = SafeToGoForwards(FloorCluster, DominantWindowCluster);
 
-	if(safe){
-		 bepoppy8_moveWaypointForward(WP_GOAL, ForwardShift);
-	}
-	else
-	{
-		bepoppy8_resetWaypoint(WP_GOAL);
+	HeadingDeflection = NavWindow*WindowAngle;
 
-		uint8_t goLeft = EscapeLeft(DominantWindowCluster, Environment);
+	printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
 
-		if(goLeft){
-			bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, -deviate);
-			increase_nav_heading(&nav_heading, -deviate);
-		}
-		else{
-			bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, deviate);
-			increase_nav_heading(&nav_heading, deviate);
-		}
-	}
+	bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, HeadingDeflection);
+	increase_nav_heading(&nav_heading, HeadingDeflection);
+
 	printf("[bepoppy8_periodic()] Finished\n");
-}
-
-uint8_t SearchFloor(struct ClusterInfo Clusters)
-{
-	uint8_t RefCluster = 0;
-
-	if(Clusters.Cl2Global>=Clusters.Cl1Global)
-	{
-		RefCluster = 1;
-	}
-	else if(Clusters.Cl3Global>=Clusters.Cl2Global)
-	{
-		RefCluster = 2;
-	}
-	return RefCluster;
-}
-
-
-uint8_t ClusterDominance(struct ClusterInfo Clusters)
-{
-	uint8_t WindowDominance = 0;
-
-	if( (Clusters.Cl2AvoidLeft+Clusters.Cl2AvoidRight) >= (Clusters.Cl1AvoidLeft+Clusters.Cl1AvoidRight) )
-	{
-		WindowDominance = 1;
-	}
-	else if( (Clusters.Cl3AvoidLeft+Clusters.Cl3AvoidRight) >= (Clusters.Cl2AvoidLeft+Clusters.Cl2AvoidRight) )
-	{
-		WindowDominance = 2;
-	}
-
-	return WindowDominance;
-}
-
-uint8_t SafeToGoForwards(uint8_t FloorCluster, uint8_t WindowCluster)
-{
-if(WindowCluster == FloorCluster)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster)
-{
-	uint8_t goLeft;
-	if(WindowDominance == 0)
-	{
-		if(Cluster.Cl1AvoidLeft > Cluster.Cl1AvoidRight){goLeft=1;}
-		else goLeft=0;
-	}
-	else if(WindowDominance == 1)
-	{
-		if(Cluster.Cl2AvoidLeft > Cluster.Cl2AvoidRight){goLeft=1;}
-		else goLeft=0;
-	}
-	else
-	{
-		if(Cluster.Cl3AvoidLeft > Cluster.Cl3AvoidRight){goLeft=1;}
-		else goLeft=0;
-	}
-	return goLeft;
 }
 
 /*
@@ -287,6 +208,8 @@ void bepoppy8_AdjustWaypointBearing(uint8_t waypoint, float distance, float Head
 	// Calculate the shift in position where to place the waypoint you want to go to
 	shift.x                       		= POS_BFP_OF_REAL( (sin_heading + HeadingDefl) * distance);
 	shift.y                       		= POS_BFP_OF_REAL( (cos_heading + HeadingDefl) * distance);
+
+	printf("I move the waypoint by: x = %f, y = %f\n", shift.x, shift.y);
 
 	bepoppy8_moveWaypointBy(waypoint, &shift);
 }

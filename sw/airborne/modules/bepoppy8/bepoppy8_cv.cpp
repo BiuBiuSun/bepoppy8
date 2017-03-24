@@ -13,28 +13,41 @@ using namespace std;
 #include <opencv2/imgcodecs.hpp>
 using namespace cv;
 
-
+#define NUM_WINDOWS 5 // Must be odd
+#define YAW_THRESHOLD 20
 
 // Define local functions:
 Mat uv_channels(struct image_t *);
 Mat cluster_image(struct image_t *);
-void setNavigationParams(struct image_t *, Mat);
+uint8_t SearchFloor(Mat);
 void write_clusterLabels(Mat);
 Mat load_clusterLabels();
 Mat yuv422_to_ab(struct image_t *img);
 void yuv_to_yuv422(Mat image, char *img);
-
-
+int *occlusionDetector(Mat img_binary, int ground_id);
 
 /*
  * vision_func(): The function attached to the listener of the v4l2 device.
  * 				: Each time a frame is ready, this function is called to process it.
  */
 struct image_t *vision_func(struct image_t *img) {
+
 	printf("[vision_func()] Started\n");
+
 	Mat clusterLabels = cluster_image(img);
-	//setNavigationParams(img, clusterLabels);
+
+	printf("BestLabels retrieved\n");
+
+	FloorID = SearchFloor(Mat clusterLabels);
+
+	printf("I found the floor\n");
+
+	NavWindow = occlusionDetector(img, FloorID);
+
+	printf("Window %d seems the best option\n", NavWindow);
+
 	printf("[vision_func()] Finished\n");
+
   return img;
 }
 
@@ -130,58 +143,39 @@ Mat uv_channels(struct image_t *img) { // TODO: Investigate possible performance
 }
 
 /*
- * Navigation Parameters
- * 	- Sets parameters used in the periodic function to navigate through the CyberZoo
+ * SearchFloor
+ * 	- Find which cluster is dominant in the last couple of rows; this cluster is expected to correspond
+ *    to the floor
  *
- * Inputs	: uint32_t img_width, img_height 	- The height and width of the image in pixels.
- * 			: Mat bestLabels 					- A CV_8UC1 Mat containing labels corresponding to which cluster it belongs to, same length as input image.
- * Outputs	: 									- Sets global variables, so periodic function can use those to determine its actions.
+ * Input	: Mat clusterLabels 	- A CV_8UC1 Mat containing labels corresponding to which cluster it
+ * 								  	  belongs to, same length as input image.
+ * Output	: uint8_t FloorCluster 	- The cluster label (unsigned char) corresponding to the floor
  */
-void setNavigationParams(struct image_t *img, Mat clusterLabels) {
-	// TODO: Make thread safe!
 
-	struct ArrayInfo NavWindowInfo;
-	uint8_t element;
+uint8_t SearchFloor(Mat clusterLabels){
 
-	NavWindowInfo.ArrayLength 	= (img->h)*0.5;
-	NavWindowInfo.InitPoint 	= (img->h)*(img->w)*0.5-NavWindowInfo.ArrayLength;
-
-	uint8_t WindowReference 	= NavWindowInfo.InitPoint + NavWindowInfo.ArrayLength/2;
-	WindowHalfSize 				= 40; // TODO: Move to init?
-	struct Window AvoidWindow 	= {WindowReference-WindowHalfSize, WindowReference+WindowHalfSize};
-
-	Environment = {0,0,0,0,0,0,0,0,0};
-
-	for(element = NavWindowInfo.InitPoint; element < NavWindowInfo.ArrayLength; element++){
-
-		if(clusterLabels.at<int>(element)==0){
-			Environment.Cl1Global++;
-			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
-				Environment.Cl1AvoidLeft++;
-			} else if(element >= WindowReference && element <= AvoidWindow.RightBoundary){
-				Environment.Cl1AvoidRight++;
-			}
+	for(int r = clusterLabels.rows - rowScans; r < clusterLabels.rows; r++)
+	{
+		for(int c = 0; c < clusterLabels.colums; c++){
+			if(clusterLabels.at<uchar>(r,c) == 0){
+				Environment.Cl0Global++;
+			} else if(clusterLabels.at<uchar>(r,c) == 1){
+				Environment.Cl1Global++;
+			} else Environment.Cl2Global++;
 		}
-		else if(clusterLabels.at<int>(element)==1){
-			Environment.Cl2Global++;
-			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
-				Environment.Cl2AvoidLeft++;
-			} else if(element >= WindowReference && element <= AvoidWindow.RightBoundary){
-				Environment.Cl2AvoidRight++;
-			}
-		}
-		else if(clusterLabels.at<int>(element)==2){
-			Environment.Cl3Global++;
-			if(element >= AvoidWindow.LeftBoundary && element <= WindowReference){
-				Environment.Cl3AvoidLeft++;
-			} else if(element >= WindowReference && element <= AvoidWindow.RightBoundary){
-				Environment.Cl3AvoidRight++;
-			}
-		} else continue;
-
 	}
 
+	uchar FloorCluster = 0;
+	if(Clusters.Cl1Global>=Clusters.Cl0Global){
+			FloorCluster = 1;
+		}
+		else if(Clusters.Cl2Global>=Clusters.Cl1Global){
+			FloorCluster = 2;
+		}
+
+	return FloorCluster;
 }
+
 
 /*
  * Write the clusterLabels file to .txt files for post processing and nav testing.
@@ -258,4 +252,56 @@ void yuv_to_yuv422(Mat image, char *img) {
 	img[index_img++] = p[j + 2]; //V
 	img[index_img++] = p[j + 3]; //Y
   }
+}
+
+int *occlusionDetector(Mat seg_image, uint8_t ground_id)
+{
+	/*
+	 * Detects the row where the ground transitions to an object for each column and determines the best window.
+	 */
+
+	// Best Properties
+	int *bestWindow = new int(0); // Current best window ID
+	int best_avg = 0; // Current best window average
+
+	// Local Window Properties
+	int window_size = seg_image.cols/NUM_WINDOWS; // width of a single window
+	int window_avg; // holds window average in loop
+
+	for(int window = 0; window < NUM_WINDOWS; window ++)
+	{
+		window_avg = 0; // Reset window average
+
+		// Note last few columns won't be iterated. seg_image.cols%NUM_WINDOWS
+		for(int c = window*window_size; c < (window+1)*window_size; ++c)
+		{
+			Mat currCol = seg_image.col(c); // Get current column
+
+			for(int r = currCol.rows-1; r >= 0 ; r--) // Start at bottom row and progressively scan up
+			{
+				// Tests if the pixel is no longer belonging to the ground in the segmented image
+				if (currCol.at<uchar>(r,0) != ground_id)
+				{
+					window_avg += (seg_image.rows-r)/window_size; // average obstacle height in window;
+					break; // Go to next column
+				}
+			}
+
+		}
+		// correction for large yaw angles and to minimise impact of marginal improvements
+		window_avg -= YAW_THRESHOLD*abs(window - NUM_WINDOWS/2);
+
+		// Check if current window is better than current best
+		if(window_avg > best_avg)
+		{
+			best_avg = window_avg;
+			*bestWindow = window-NUM_WINDOWS/2;
+		}
+
+		cout << "Window " << window-NUM_WINDOWS/2 << " average:\t" << window_avg << endl; // print window average
+
+	}
+
+    cout << "Best Window:\t\t"<<	*bestWindow	<< endl; // print best window
+	return bestWindow;
 }
