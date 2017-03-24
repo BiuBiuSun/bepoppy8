@@ -30,11 +30,6 @@
 
 struct video_listener *listener = NULL;
 
-// Declare functions - why does this not work when using the header file?
-extern uint8_t SearchFloor(struct ClusterInfo);
-extern uint8_t ClusterDominance(struct ClusterInfo);
-extern uint8_t SafeToGoForwards(uint8_t FloorCluster, uint8_t WindowCluster);
-extern uint8_t EscapeLeft(uint8_t WindowDominance, struct ClusterInfo Cluster);
 
 void bepoppy8_init() {
 	printf("[bepoppy8_init()] Start\n");
@@ -50,7 +45,7 @@ void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 	printf("[bepoppy8_periodic()] Start\n");
 
-	HeadingDeflection = NavWindow*WindowAngle;
+	HeadingDeflection = (*NavWindow)*WindowAngle;
 
 	printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
 
@@ -209,7 +204,7 @@ void bepoppy8_AdjustWaypointBearing(uint8_t waypoint, float distance, float Head
 	shift.x                       		= POS_BFP_OF_REAL( (sin_heading + HeadingDefl) * distance);
 	shift.y                       		= POS_BFP_OF_REAL( (cos_heading + HeadingDefl) * distance);
 
-	printf("I move the waypoint by: x = %f, y = %f\n", shift.x, shift.y);
+	printf("I move the waypoint by: x = %d, y = %d\n", shift.x, shift.y);
 
 	bepoppy8_moveWaypointBy(waypoint, &shift);
 }

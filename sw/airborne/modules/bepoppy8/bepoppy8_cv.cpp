@@ -13,9 +13,6 @@ using namespace std;
 #include <opencv2/imgcodecs.hpp>
 using namespace cv;
 
-#define NUM_WINDOWS 5 // Must be odd
-#define YAW_THRESHOLD 20
-
 // Define local functions:
 Mat uv_channels(struct image_t *);
 Mat cluster_image(struct image_t *);
@@ -24,7 +21,7 @@ void write_clusterLabels(Mat);
 Mat load_clusterLabels();
 Mat yuv422_to_ab(struct image_t *img);
 void yuv_to_yuv422(Mat image, char *img);
-int *occlusionDetector(Mat img_binary, int ground_id);
+int *occlusionDetector(Mat img_binary, uint8_t ground_id);
 
 
 // Global Variables:
@@ -45,15 +42,14 @@ struct image_t *vision_func(struct image_t *img) {
 
 	printf("BestLabels retrieved\n");
 
-	FloorID = SearchFloor(Mat clusterLabels);
+	uint8_t FloorID = SearchFloor(clusterLabels);
 
 	printf("I found the floor\n");
 
-	NavWindow = occlusionDetector(img, FloorID);
+	NavWindow = occlusionDetector(clusterLabels, FloorID);
 
-	printf("Window %d seems the best option\n", NavWindow);
+	printf("Window %d seems the best option\n", *NavWindow);
 
-	//setNavigationParams(img, clusterLabels);
 	printf("[vision_func()] Finished\n");
 
   return img;
@@ -152,14 +148,15 @@ Mat uv_channels(struct image_t *img) { // TODO: Investigate possible performance
  * 								  	  belongs to, same length as input image.
  * Output	: uint8_t FloorCluster 	- The cluster label (unsigned char) corresponding to the floor
  */
-void setNavigationParams(struct image_t *img, Mat clusterLabels) {
-	// TODO: Make thread safe!
 
 uint8_t SearchFloor(Mat clusterLabels){
 
+	struct ClusterInfo Environment = {0,0,0};
+	int rowScans = 5;
+
 	for(int r = clusterLabels.rows - rowScans; r < clusterLabels.rows; r++)
 	{
-		for(int c = 0; c < clusterLabels.colums; c++){
+		for(int c = 0; c < clusterLabels.cols; c++){
 			if(clusterLabels.at<uchar>(r,c) == 0){
 				Environment.Cl0Global++;
 			} else if(clusterLabels.at<uchar>(r,c) == 1){
@@ -168,11 +165,11 @@ uint8_t SearchFloor(Mat clusterLabels){
 		}
 	}
 
-	uchar FloorCluster = 0;
-	if(Clusters.Cl1Global>=Clusters.Cl0Global){
+	uint8_t FloorCluster = 0;
+	if(Environment.Cl1Global>=Environment.Cl0Global){
 			FloorCluster = 1;
 		}
-		else if(Clusters.Cl2Global>=Clusters.Cl1Global){
+		else if(Environment.Cl2Global>=Environment.Cl1Global){
 			FloorCluster = 2;
 		}
 
@@ -263,7 +260,7 @@ void yuv_to_yuv422(Mat image, char *img) {
   }
 }
 
-int *occlusionDetector(Mat seg_image, uint8_t ground_id)
+int * occlusionDetector(Mat seg_image, uint8_t ground_id)
 {
 	/*
 	 * Detects the row where the ground transitions to an object for each column and determines the best window.
@@ -307,10 +304,10 @@ int *occlusionDetector(Mat seg_image, uint8_t ground_id)
 			*bestWindow = window-NUM_WINDOWS/2;
 		}
 
-		cout << "Window " << window-NUM_WINDOWS/2 << " average:\t" << window_avg << endl; // print window average
+		//cout << "Window " << window-NUM_WINDOWS/2 << " average:\t" << window_avg << endl; // print window average
 
 	}
 
-    cout << "Best Window:\t\t"<<	*bestWindow	<< endl; // print best window
+    //cout << "Best Window:\t\t"<<	*bestWindow	<< endl; // print best window
 	return bestWindow;
 }

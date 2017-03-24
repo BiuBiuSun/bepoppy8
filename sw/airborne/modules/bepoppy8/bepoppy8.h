@@ -35,6 +35,7 @@ extern uint8_t increase_nav_heading(int32_t *, float);
 
 float ForwardShift;
 float FOV;
+float WindowAngle;
 float HeadingDeflection;
 
 #endif
