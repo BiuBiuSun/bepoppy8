@@ -5,12 +5,12 @@
 		<target name="ap" board="bebop" />
 		<!-- Front Camera parameters -->
 		<define name="H264_ROTATE" value="TRUE" />
-		<define name="MT9F002_INITIAL_OFFSET_X" value="416+2704-512" /> <!-- 480 / 960 / 1920 / 3840 (horion for theta = 0 -> 2704) -->
+		<define name="MT9F002_INITIAL_OFFSET_X" value="416+2704-1020" /> <!-- 480 / 960 / 1920 / 3840 (horion for theta = 0 -> 2704) -->
 		<define name="MT9F002_INITIAL_OFFSET_Y" value="1680-1040" /> <!-- 420 / 840 / 1680 / 3360 -->
-		<define name="MT9F002_SENSOR_WIDTH" value="2*512" /> <!-- 480 / 960 / 1920 / 3840 -->
-		<define name="MT9F002_SENSOR_HEIGHT" value="2*1040" /> <!-- 420 / 840 / 1680 / 3360 -->
-		<define name="MT9F002_OUTPUT_WIDTH" value="128" /> <!-- 480 / 960 / 1920 / 3840 -->
-		<define name="MT9F002_OUTPUT_HEIGHT" value="260" /> <!-- 420 / 840 / 1680 / 3360 -->
+		<define name="MT9F002_SENSOR_WIDTH" value="2*4*128" /> <!-- 480 / 960 / 1920 / 3840 -->
+		<define name="MT9F002_SENSOR_HEIGHT" value="2*2*480" /> <!-- 420 / 840 / 1680 / 3360 -->
+		<define name="MT9F002_OUTPUT_WIDTH" value="144" /> <!-- 480 / 960 / 1920 / 3840 -->
+		<define name="MT9F002_OUTPUT_HEIGHT" value="480" /> <!-- 420 / 840 / 1680 / 3360 -->
 		<define name="MT9F002_TARGET_FPS" value="30" />
 		<define name="MT9F002_TARGET_EXPOSURE" value="4" />
 		<define name="MT9F002_GAIN_GREEN1" value="8.0" />
@@ -53,7 +53,7 @@
 		</module>
 		<module name="bepoppy8" />
 		<module name="video_rtp_stream">
-			<configure name="VIEWVIDEO_HOST" value="192.168.42.80" />
+			<configure name="VIEWVIDEO_HOST" value="192.168.42.31" />
 			<configure name="VIEWVIDEO_BROADCAST" value="FALSE" />
 			<define name="VIEWVIDEO_CAMERA" value="front_camera" />
 			<define name="VIEWVIDEO_SHOT_PATH" value="/data/ftp/internal_000" />
