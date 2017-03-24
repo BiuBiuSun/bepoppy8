@@ -211,33 +211,48 @@ Mat load_clusterLabels() {
 Mat yuv422_to_ab(struct image_t *img) {
 	uint8_t * img_buf = (uint8_t *) img->buf;
 
-	Mat yuv(img->w*img->h,3,CV_8UC1);
+	Mat yuv(img->w*img->h,1,CV_8UC3);
 	Mat BGR(img->w*img->h,1,CV_8UC3);
 	Mat Lab(img->w*img->h,1,CV_8UC3);
 	Mat ab(img->w*img->h,2, CV_8UC1);
 	Mat out(img->w*img->h,2, CV_32FC1);
+
+	;
+	int index = 0;
 	for (uint16_t y = 0; y < img->h; y++) {
 		for (uint16_t x = 0; x < img->w; x += 2) {
-			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[1]; // Y1
-			yuv.at<uint8_t>((y*img->w + x)/2, 0) = img_buf[0]; // U
-			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[2]; // V
 
+			Vec3b elem 	= yuv.at<Vec3b>(index++); // or m.at<Vec2f>( Point(col,row) );
+			elem[0] = img_buf[1];
+			elem[1] = img_buf[0];
+			elem[2] = img_buf[2];
 
-			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[3]; // Y2
-			yuv.at<uint8_t>((y*img->w + x)/2, 0) = img_buf[0]; // U
-			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[2]; // V
+			Vec3b elem2 	= yuv.at<Vec3b>(index++); // or m.at<Vec2f>( Point(col,row) );
+			elem2[0] = img_buf[3]; // Y2
+			elem2[1] = img_buf[0]; // U
+			elem2[2] = img_buf[2]; // V
+
 			img_buf += 4;
 		}
 	}
-	yuv.reshape(3,yuv.rows);
+	printf("[yuv2ab()] YUV put in matrix\n");
+	//printf("[yuv2ab()] YUV about to be reshaped.\nRows: %d, Cols: %d, Channels: %d\n", yuv.rows, yuv.cols, yuv.channels());
+	//yuv.reshape(3, yuv.rows);
+	printf("[yuv2ab()] YUV reshaped.\nRows: %d, Cols: %d, Channels: %d\n", yuv.rows, yuv.cols, yuv.channels());
 	cvtColor(yuv, BGR, CV_YUV2BGR);
+	printf("[yuv2ab()] YUV2BGR\n");
 	cvtColor(BGR, Lab, CV_BGR2Lab);
+	printf("[yuv2ab()] BRG2Lab\n");
 
 	Lab.reshape(1,Lab.rows);
+	printf("[yuv2ab()] Lab reshaped\n");
+	printf("[yuv2ab()] Rows: %d, Cols: %d, Channels: %d\n", Lab.rows, Lab.cols, Lab.channels());
 	Lab.col(0).copyTo(ab.col(0));
+	printf("[yuv2ab()] Lab col 1 copied\n");
 	Lab.col(1).copyTo(ab.col(1));
-
+	printf("[yuv2ab()] Lab col 2 copied\n");
 	ab.convertTo(out,CV_32F);
+	printf("[yuv2ab()] ab converted - done\n");
 
 	return out;
 }
