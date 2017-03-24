@@ -15,6 +15,7 @@
 #include "state.h"
 
 #define DEBUGGING true
+#define useLab true
 
 extern void bepoppy8_init(void);
 extern void bepoppy8_periodic(void);

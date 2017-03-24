@@ -13,12 +13,15 @@ using namespace std;
 #include <opencv2/imgcodecs.hpp>
 using namespace cv;
 
+
+
 // Define local functions:
 Mat uv_channels(struct image_t *);
 Mat cluster_image(struct image_t *);
 void setNavigationParams(struct image_t *, Mat);
 void write_clusterLabels(Mat);
 Mat load_clusterLabels();
+Mat yuv422_to_ab(struct image_t *img);
 void yuv_to_yuv422(Mat image, char *img);
 
 
@@ -47,7 +50,15 @@ Mat cluster_image(struct image_t *img) {
 		printf("[cluster_image()] Start\n");
 		uint8_t *img_buf 	= (uint8_t *) img->buf;			// Get image buffer
 		printf("cluster imgbuf\n");
-		Mat uv 				= uv_channels(img);				// Get UV channels to workable format for K-means
+
+		Mat data;
+		if (useLab) {
+			data    = yuv422_to_ab(img);				// Get ab channels to workable format for K-means
+		}
+		else {
+			data 	= uv_channels(img);				// Get UV channels to workable format for K-means
+		}
+
 
 		// K-means allocation and parameters
 		Mat clusterLabels, centers;
@@ -56,10 +67,10 @@ Mat cluster_image(struct image_t *img) {
 		double eps 			= 0.001;
 		printf("cluster init done\n");
 		if (init_cluster.empty()){
-			kmeans(uv, clusters, init_cluster, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
+			kmeans(data, clusters, init_cluster, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_PP_CENTERS, centers);
 			printf("EMPTY\n");
 		}
-		kmeans(uv, clusters, init_cluster, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_USE_INITIAL_LABELS, centers);
+		kmeans(data, clusters, init_cluster, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_USE_INITIAL_LABELS, centers);
 		clusterLabels = init_cluster;
 
 		//write_clusterLabels(clusterLabels);
@@ -195,6 +206,40 @@ Mat load_clusterLabels() {
 	fs.release();
 
 	return clusterLabels;
+}
+
+Mat yuv422_to_ab(struct image_t *img) {
+	uint8_t * img_buf = (uint8_t *) img->buf;
+
+	Mat yuv(img->w*img->h,3,CV_8UC1);
+	Mat BGR(img->w*img->h,1,CV_8UC3);
+	Mat Lab(img->w*img->h,1,CV_8UC3);
+	Mat ab(img->w*img->h,2, CV_8UC1);
+	Mat out(img->w*img->h,2, CV_32FC1);
+	for (uint16_t y = 0; y < img->h; y++) {
+		for (uint16_t x = 0; x < img->w; x += 2) {
+			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[1]; // Y1
+			yuv.at<uint8_t>((y*img->w + x)/2, 0) = img_buf[0]; // U
+			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[2]; // V
+
+
+			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[3]; // Y2
+			yuv.at<uint8_t>((y*img->w + x)/2, 0) = img_buf[0]; // U
+			yuv.at<uint8_t>((y*img->w + x)/2, 1) = img_buf[2]; // V
+			img_buf += 4;
+		}
+	}
+	yuv.reshape(3,yuv.rows);
+	cvtColor(yuv, BGR, CV_YUV2BGR);
+	cvtColor(BGR, Lab, CV_BGR2Lab);
+
+	Lab.reshape(1,Lab.rows);
+	Lab.col(0).copyTo(ab.col(0));
+	Lab.col(1).copyTo(ab.col(1));
+
+	ab.convertTo(out,CV_32F);
+
+	return out;
 }
 
 void yuv_to_yuv422(Mat image, char *img) {
