@@ -11,6 +11,7 @@ using namespace std;
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <numeric>
 using namespace cv;
 
 // Define local functions:
@@ -104,6 +105,7 @@ Mat cluster_image(struct image_t *img) {
 //			printf("Length of restore loop: %d\n", index);
 
 			// Process from clusterLabels
+
 			img_intermediate.convertTo(img_intermediate2, CV_8UC1, scale, 0);
 			applyColorMap(img_intermediate2, img_seg, COLORMAP_BONE);
 			cvtColor(img_seg, img_seg, COLOR_BGR2YUV);
@@ -153,30 +155,41 @@ uint8_t SearchFloor(Mat clusterLabels, struct image_t *img){
 	struct ClusterInfo Environment = {0,0,0};
 	int rowScans = 5;
 
-	int errors = 0;
+	int out = 0;
+	int total = 0;
 
-	for(int c = 0; c < img->h; c++) {
+	uint32_t num0 = 0, num1 = 1, num2 = 2;
+
+	uint32_t seg0_labels = 0;
+	uint32_t seg1_labels = 0;
+	uint32_t seg2_labels = 0;
+
+	for(int c = 0; c < img->h; c++)
+	{
 		int start = c * img->w/2;
+		out++;
 
-		for(int r = start; r < start + rowScans; r++) {
+		for(int i = start; i < start + rowScans; i++){
 
-			switch (clusterLabels.at<uint8_t>(r)) {
-			case 0:
-				Environment.Cl0Global++;
-				break;
-			case 1:
-				Environment.Cl1Global++;
-				break;
-			case 2:
-				Environment.Cl2Global++;
-				break;
-			default:
-				printf("[SearchFloor] Error caused by value of: %d\n", clusterLabels.at<uint8_t>(r));
-				errors++;
-				break;
+			if(clusterLabels.at<uint32_t>(i) == num0){
+				seg0_labels++;
 			}
+			if(clusterLabels.at<uint32_t>(i) == num1){
+				seg1_labels++;
+			}
+			if(clusterLabels.at<uint32_t>(i) == num2){
+				seg2_labels++;
+			}
+
+			total++;
 		}
 	}
+
+	Environment.Cl0Global = seg0_labels;
+	Environment.Cl1Global = seg1_labels;
+	Environment.Cl2Global = seg2_labels;
+
+	printf("# of pixels seg 0: %d, seg 1: %d, seg2: %d, total: %d, rest: %d \n", Environment.Cl0Global,Environment.Cl1Global,Environment.Cl2Global, Environment.Cl0Global + Environment.Cl1Global + Environment.Cl2Global);
 
 	uint8_t FloorCluster = 0;
 	if(Environment.Cl1Global>=Environment.Cl0Global && Environment.Cl1Global>=Environment.Cl2Global){
@@ -185,6 +198,9 @@ uint8_t SearchFloor(Mat clusterLabels, struct image_t *img){
 		else if(Environment.Cl2Global>=Environment.Cl1Global && Environment.Cl2Global>=Environment.Cl0Global){
 			FloorCluster = 2;
 		}
+
+	printf("outer loop: %d \n", out);
+	printf("total counts: %d\n", total);
 
 	return FloorCluster;
 }
