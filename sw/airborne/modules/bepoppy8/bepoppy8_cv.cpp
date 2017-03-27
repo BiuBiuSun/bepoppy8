@@ -48,7 +48,11 @@ struct image_t *vision_func(struct image_t *img) {
 
 	printf("I found the floor: %d\n", FloorID);
 
-	NavWindow = windowSearch(clusterLabels, FloorID, img);
+	pthread_mutex_lock(&navWindow_mutex);
+	    {
+		NavWindow = occlusionDetector(clusterLabels, FloorID);
+	    }
+	pthread_mutex_unlock(&navWindow_mutex);
 
 	printf("Window %d seems the best option\n", NavWindow);
 
@@ -90,6 +94,7 @@ Mat cluster_image(struct image_t *img) {
 		}
 		kmeans(data, clusters, init_cluster, TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, attempts, eps), attempts, KMEANS_USE_INITIAL_LABELS, centers);
 		clusterLabels = init_cluster;
+
 
 		if(DEBUGGING) {
 			Mat img_intermediate(2*clusterLabels.rows,1,CV_32SC1), img_intermediate2, img_seg;

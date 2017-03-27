@@ -45,7 +45,15 @@ void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 	printf("[bepoppy8_periodic()] Start\n");
 
-	HeadingDeflection = NavWindow*WindowAngle;
+
+
+	// Thread safe operation:
+	pthread_mutex_lock(&navWindow_mutex);
+	{
+	HeadingDeflection = (*NavWindow)*WindowAngle;
+	*NavWindow = 0;
+	}
+	pthread_mutex_unlock(&navWindow_mutex);
 
 	printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
 
