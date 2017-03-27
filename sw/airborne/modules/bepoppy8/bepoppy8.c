@@ -38,6 +38,8 @@ void bepoppy8_init() {
 	FOV 						= 130.0; //degrees
 	WindowAngle 				= FOV/NUM_WINDOWS;
 
+	pthread_mutex_init(&navWindow_mutex,NULL);
+
 	printf("[bepoppy8_init()] Finished\n");
 }
 
@@ -45,7 +47,15 @@ void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 	printf("[bepoppy8_periodic()] Start\n");
 
+
+
+	// Thread safe operation:
+	pthread_mutex_lock(&navWindow_mutex);
+	{
 	HeadingDeflection = (*NavWindow)*WindowAngle;
+	*NavWindow = 0;
+	}
+	pthread_mutex_unlock(&navWindow_mutex);
 
 	printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
 

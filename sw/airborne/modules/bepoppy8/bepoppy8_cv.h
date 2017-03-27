@@ -26,6 +26,7 @@ struct ClusterInfo{
 	uint32_t Cl2Global;
 };
 
+
 int *NavWindow;
 
 #ifdef __cplusplus

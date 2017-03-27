@@ -47,7 +47,12 @@ struct image_t *vision_func(struct image_t *img) {
 
 	printf("I found the floor: %d\n", FloorID);
 
-	NavWindow = occlusionDetector(clusterLabels, FloorID);
+	pthread_mutex_lock(&navWindow_mutex);
+	    {
+		NavWindow = occlusionDetector(clusterLabels, FloorID);
+	    }
+	pthread_mutex_unlock(&navWindow_mutex);
+
 
 	printf("Window %d seems the best option\n", *NavWindow);
 

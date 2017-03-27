@@ -38,5 +38,7 @@ float FOV;
 float WindowAngle;
 float HeadingDeflection;
 
+pthread_mutex_t navWindow_mutex;
+
 #endif
 
