@@ -21,9 +21,9 @@ extern struct image_t *vision_func(struct image_t *);
 #define YAW_THRESHOLD 20
 
 struct ClusterInfo{
-	uint8_t Cl0Global;
-	uint8_t Cl1Global;
-	uint8_t Cl2Global;
+	uint32_t Cl0Global;
+	uint32_t Cl1Global;
+	uint32_t Cl2Global;
 };
 
 int *NavWindow;

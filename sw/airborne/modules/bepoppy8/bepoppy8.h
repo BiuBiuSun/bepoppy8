@@ -14,7 +14,7 @@
 #include <inttypes.h>
 #include "state.h"
 
-#define DEBUGGING false
+#define DEBUGGING true
 #define useLab true
 
 extern void bepoppy8_init(void);
