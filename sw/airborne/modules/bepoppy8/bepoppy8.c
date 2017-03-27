@@ -35,8 +35,8 @@ void bepoppy8_init() {
 	printf("[bepoppy8_init()] Start\n");
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
 	ForwardShift				= 0.2;
-	FOV 						= 130.0; //degrees
-	WindowAngle 				= FOV/NUM_WINDOWS;
+	FOV 						= 100.0; //degrees
+	WindowAngle 				= FOV/NumWindows;
 
 	printf("[bepoppy8_init()] Finished\n");
 }
@@ -45,7 +45,7 @@ void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 	printf("[bepoppy8_periodic()] Start\n");
 
-	HeadingDeflection = (*NavWindow)*WindowAngle;
+	HeadingDeflection = NavWindow*WindowAngle;
 
 	printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
 

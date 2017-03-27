@@ -22,14 +22,15 @@ void write_clusterLabels(Mat);
 Mat load_clusterLabels();
 Mat yuv422_to_ab(struct image_t *img);
 void yuv_to_yuv422(Mat image, char *img);
-int *occlusionDetector(Mat img_binary, uint8_t ground_id);
+//int *occlusionDetector(Mat img_binary, uint8_t ground_id);
+int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img);
+//float *windowAverage(Mat, uint8_t);
 
 
 // Global Variables:
 uint8_t attempts 	= 1;
 uint8_t clusters 	= 3;
-double eps 			= 0.1;
-
+double eps 			= 0.01;
 
 /*
  * vision_func(): The function attached to the listener of the v4l2 device.
@@ -47,9 +48,9 @@ struct image_t *vision_func(struct image_t *img) {
 
 	printf("I found the floor: %d\n", FloorID);
 
-	NavWindow = occlusionDetector(clusterLabels, FloorID);
+	NavWindow = windowSearch(clusterLabels, FloorID, img);
 
-	printf("Window %d seems the best option\n", *NavWindow);
+	printf("Window %d seems the best option\n", NavWindow);
 
 //	printf("[vision_func()] Finished\n");
 
@@ -79,6 +80,8 @@ Mat cluster_image(struct image_t *img) {
 		else {
 			data 	= uv_channels(img);						// Get UV channels to workable format for K-means
 		}
+
+//		medianBlur(data,data,3);
 
 		// Check if clusters are initialized:
 		if (init_cluster.empty()){
@@ -188,7 +191,7 @@ uint8_t SearchFloor(Mat clusterLabels, struct image_t *img){
 	Environment.Cl1Global = seg1_labels;
 	Environment.Cl2Global = seg2_labels;
 
-	printf("# of pixels seg 0: %d, seg 1: %d, seg2: %d, total: %d, rest: %d \n", Environment.Cl0Global,Environment.Cl1Global,Environment.Cl2Global, Environment.Cl0Global + Environment.Cl1Global + Environment.Cl2Global);
+	//printf("# of pixels seg 0: %d, seg 1: %d, seg2: %d, total: %d, rest: %d \n", Environment.Cl0Global,Environment.Cl1Global,Environment.Cl2Global, Environment.Cl0Global + Environment.Cl1Global + Environment.Cl2Global);
 
 	uint8_t FloorCluster = 0;
 	if(Environment.Cl1Global>=Environment.Cl0Global && Environment.Cl1Global>=Environment.Cl2Global){
@@ -198,11 +201,62 @@ uint8_t SearchFloor(Mat clusterLabels, struct image_t *img){
 			FloorCluster = 2;
 		}
 
-	printf("outer loop: %d \n", out);
-	printf("total counts: %d\n", total);
+	//printf("outer loop: %d \n", out);
+	//printf("total counts: %d\n", total);
 
 	return FloorCluster;
 }
+
+/*
+ * Detects the row where the ground transitions to an object for each column and determines the best window.
+ */
+
+int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img){
+	Mat inde_line(1, img->h, CV_32FC1);
+	Mat binary_img = clusterLabels == FloorCluster;
+	int testvar = 0;
+	for(int j=0; j<img->h; j++){
+		for(int i=j*img->w/2; i<img->w/2*(j+1); i++){
+				if(binary_img.at<uchar>(i)==0){
+					inde_line.at<float>(j) =i - j*img->w/2;
+					break;
+				}
+				else{
+					inde_line.at<float>(j) = img->w/2;
+				}
+		}
+	}
+	// Find the average corresponding to each window
+
+	NumWindows = 5;
+	float windowsAverage[NumWindows];
+
+	if ((NumWindows % 2) && (inde_line.cols*inde_line.rows % NumWindows == 0)) {
+			int windowSize = inde_line.cols*inde_line.rows/NumWindows;
+
+				for (int i = 0; i < NumWindows; i++) {
+					windowsAverage[i] = 0;
+					for (int j = 0; j < windowSize; j++) {
+						windowsAverage[i] += inde_line.at<float>(i*windowSize + j)/windowSize;
+					}
+				}
+	}
+
+	int8_t bestWindow = 0;
+
+	float maxAverage = windowsAverage[0];
+	for(uint8_t i = 1; i < NumWindows; i++){
+		if(windowsAverage[i] > maxAverage){
+			maxAverage = windowsAverage[i];
+			bestWindow = i;
+		}
+	}
+
+	return (bestWindow - (NumWindows-1)/2);
+
+	cout << inde_line << endl;
+}
+
 
 
 /*
@@ -288,14 +342,15 @@ void yuv_to_yuv422(Mat image, char *img) {
   }
 }
 
-int * occlusionDetector(Mat seg_image, uint8_t ground_id)
+
+/*int * occlusionDetector(Mat seg_image, uint8_t ground_id)
 {
 	/*
 	 * Detects the row where the ground transitions to an object for each column and determines the best window.
 	 */
 
 	// Best Properties
-	int *bestWindow = new int(0); // Current best window ID
+/*	int *bestWindow = new int(0); // Current best window ID
 	int best_avg = 0; // Current best window average
 
 	// Local Window Properties
@@ -340,4 +395,4 @@ int * occlusionDetector(Mat seg_image, uint8_t ground_id)
 
     //cout << "Best Window:\t\t"<<	*bestWindow	<< endl; // print best window
 	return bestWindow;
-}
+	}*/
