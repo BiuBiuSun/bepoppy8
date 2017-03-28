@@ -35,10 +35,12 @@ void bepoppy8_init() {
 	printf("[bepoppy8_init()] Start\n");
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
 
-	NumWindows = 5;
-	ForwardShift				= 0.2;
+	STARTED 					= false;
+	NumWindows 					= 5;
+	ForwardShift				= 1.0;
 	FOV 						= 100.0; //degrees
 	WindowAngle 				= FOV/NumWindows;
+	windowThreshold 			= 10;
 
 	pthread_mutex_init(&navWindow_mutex,NULL);
 
@@ -49,20 +51,19 @@ void bepoppy8_periodic() {
 	// Periodic function that processes the video and decides on the action to take.
 	printf("[bepoppy8_periodic()] Start\n");
 
+	if (STARTED) {
+		// Thread safe operation:
+		pthread_mutex_lock(&navWindow_mutex);
+		{
+		HeadingDeflection = NavWindow*WindowAngle*M_PI/180;
+		NavWindow = 0;
+		}
+		pthread_mutex_unlock(&navWindow_mutex);
 
+		printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
 
-	// Thread safe operation:
-	pthread_mutex_lock(&navWindow_mutex);
-	{
-	HeadingDeflection = NavWindow*WindowAngle;
-	NavWindow = 0;
+		bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, HeadingDeflection);
 	}
-	pthread_mutex_unlock(&navWindow_mutex);
-
-	printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
-
-	bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, HeadingDeflection);
-	increase_nav_heading(&nav_heading, HeadingDeflection);
 
 	printf("[bepoppy8_periodic()] Finished\n");
 }
@@ -83,25 +84,27 @@ void bepoppy8_periodic() {
  */
 void bepoppy8_logTelemetry(char* msg, int nb_msg) {
 	if (DEBUGGING){
-		//DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, nb_msg,  msg);
+		DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, nb_msg,  msg);
 		printf("%s", msg);
 	}
 }
 
+/*
+ * Start execution of periodic avoidance function.
+ */
 void bepoppy8_start(uint8_t waypoint){
-	char *msg;
-	logTelemetry("bepoppy8_start initiated");
+	printf("[bepoppy8_start()] Initiated");
 
-	struct EnuCoor_i shift;
-	shift.x 	= POS_BFP_OF_REAL(1.0);
-	shift.y 	= POS_BFP_OF_REAL(1.0);
-
-	asprintf(&msg, "Shift: x = %f, y = %f", POS_FLOAT_OF_BFP(shift.x), POS_FLOAT_OF_BFP(shift.y));
-	logTelemetry(msg);
-
-	logTelemetry("call moveWaypointTo");
-	//bepoppy8_moveWaypointTo(waypoint, 2.5);
+	STARTED = true;
 }
+
+/*
+ * Stop execution of periodic avoidance function.
+ */
+  void bepoppy8_stop() {
+ 	STARTED = false;
+ }
+
 
 /*
  * Move the current waypoint with the distances defined by *shift.
@@ -200,7 +203,7 @@ void bepoppy8_resetWaypoint(uint8_t waypoint){
 }
 
 /*
- * Move waypoint by a certain heading angle relative to the current heading of the drone
+ * Move waypoint by a certain heading angle [rad] relative to the current heading of the drone
  *
  * Untested
  */
@@ -209,12 +212,12 @@ void bepoppy8_AdjustWaypointBearing(uint8_t waypoint, float distance, float Head
 	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
 
 	// Calculate the sine and cosine of the heading the drone is keeping
-	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
-	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi));
+	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi + HeadingDefl));
+	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi + HeadingDefl));
 
 	// Calculate the shift in position where to place the waypoint you want to go to
-	shift.x                       		= POS_BFP_OF_REAL( (sin_heading + HeadingDefl) * distance);
-	shift.y                       		= POS_BFP_OF_REAL( (cos_heading + HeadingDefl) * distance);
+	shift.x                       		= POS_BFP_OF_REAL(sin_heading*distance);
+	shift.y                       		= POS_BFP_OF_REAL(cos_heading*distance);
 
 	printf("I move the waypoint by: x = %d, y = %d\n", shift.x, shift.y);
 

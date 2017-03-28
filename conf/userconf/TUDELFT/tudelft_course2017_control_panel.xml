@@ -15,7 +15,7 @@
     <program name="Log File Player" command="sw/logalizer/play"/>
     <program name="Simulator" command="sw/simulator/pprzsim-launch"/>
     <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-	<arg flag="-d" constant="1"/>      
+	<arg flag="-d" constant="2"/>      
 	<arg flag="-ac" constant="@AIRCRAFT"/>
       	<arg flag="hobbyking.xml"/>
     </program>
@@ -34,7 +34,7 @@
         <arg flag="-speech"/>
       </program>
       <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-	<arg flag="-d" constant="1"/>       
+	<arg flag="-d" constant="2"/>       
 	<arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="hobbyking.xml"/>
       </program>
@@ -52,7 +52,7 @@
         	<arg flag="-speech"/>
       	</program>
       	<program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-        	<arg flag="-d" constant="1"/>
+        	<arg flag="-d" constant="2"/>
         	<arg flag="-ac" constant="@AIRCRAFT"/>
         	<arg flag="hobbyking.xml"/>
       	</program>

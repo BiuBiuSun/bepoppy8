@@ -255,6 +255,10 @@ int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img
 		}
 	}
 
+	if (maxAverage < windowThreshold) {
+		return NumWindows;
+	}
+
 	return (bestWindow - (NumWindows-1)/2);
 
 	cout << inde_line << endl;

@@ -14,13 +14,15 @@
 #include <inttypes.h>
 #include "state.h"
 
-#define DEBUGGING false
+#define DEBUGGING true
 #define useLab true
+
 
 extern void bepoppy8_init(void);
 extern void bepoppy8_periodic(void);
 
 extern void bepoppy8_start(uint8_t);
+extern void bepoppy8_stop(void);
 
 extern void bepoppy8_logTelemetry(char*, int);
 extern void bepoppy8_moveWaypointBy(uint8_t, struct EnuCoor_i *);
@@ -32,10 +34,12 @@ extern void coordinateTurn(struct EnuCoor_i *);
 extern float calculateHeading(struct EnuCoor_i *);
 extern uint8_t increase_nav_heading(int32_t *, float);
 
+bool STARTED;
 float ForwardShift;
 float FOV;
 float WindowAngle;
 float HeadingDeflection;
+int windowThreshold;
 
 pthread_mutex_t navWindow_mutex;
 
