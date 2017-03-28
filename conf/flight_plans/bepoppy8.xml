@@ -102,15 +102,16 @@
       <stay wp="STDBY"/>
     </block>
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
-      <call_once fun="bepoppy8_start(WP_GOAL)"/>
+    	<call_once fun="NavSetWaypointHere(WP_GOAL)"/>
+      	<call_once fun="bepoppy8_start(WP_GOAL)"/>
     </block>
     <block name="StayGoal">
       <stay wp="GOAL"/>
-      <exception cond="!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))" deroute="PrepareObstacleRun"/>
+      <exception cond="!InsideObstacleZone(WaypointX(WP_GOAL),WaypointY(WP_GOAL))" deroute="PrepareObstacleRun"/>
     </block>
     <block name="PrepareObstacleRun">
-      <while cond="!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))">
-        <call_once fun="increase_nav_heading(&nav_heading, 5)"/>
+      <while cond="!InsideObstacleZone(WaypointX(WP_GOAL),WaypointY(WP_GOAL))">
+        <call_once fun="increase_nav_heading(&nav_heading, 33)"/>
       </while>
     </block>
     <block name="GetIntoObstacleZone">

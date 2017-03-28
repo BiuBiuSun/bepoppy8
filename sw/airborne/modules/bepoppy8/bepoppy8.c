@@ -40,7 +40,7 @@ void bepoppy8_init() {
 	ForwardShift				= 1.0;
 	FOV 						= 100.0; //degrees
 	WindowAngle 				= FOV/NumWindows;
-	windowThreshold 			= 15;
+	windowThreshold 			= 30;
 
 	pthread_mutex_init(&navWindow_mutex,NULL);
 

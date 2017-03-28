@@ -1,7 +1,7 @@
 <conf>
   <aircraft
    name="bebop_avoid"
-   ac_id="42"
+   ac_id="66"
    airframe="airframes/bepoppy8.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"

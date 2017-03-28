@@ -14,7 +14,7 @@
 #include <inttypes.h>
 #include "state.h"
 
-#define DEBUGGING true
+#define DEBUGGING false
 #define useLab true
 
 

@@ -26,7 +26,7 @@ int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img
 
 
 // Global Variables:
-uint8_t attempts 	= 1;
+uint8_t attempts 	= 3;
 uint8_t clusters 	= 3;
 double eps 			= 0.01;
 

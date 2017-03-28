@@ -18,7 +18,7 @@ extern "C" {
 
 extern struct image_t *vision_func(struct image_t *);
 #define NUM_WINDOWS 5 // Must be odd
-#define YAW_THRESHOLD 20
+
 
 struct ClusterInfo{
 	uint32_t Cl0Global;
