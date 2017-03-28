@@ -98,13 +98,14 @@
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
+      <call_once fun="bepoppy8_stop()"/>
       <stay wp="STDBY"/>
     </block>
     <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
       <call_once fun="bepoppy8_start(WP_GOAL)"/>
     </block>
     <block name="StayGoal">
-      <go wp="GOAL"/>
+      <stay wp="GOAL"/>
       <exception cond="!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))" deroute="PrepareObstacleRun"/>
     </block>
     <block name="PrepareObstacleRun">
