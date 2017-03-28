@@ -40,7 +40,7 @@ void bepoppy8_init() {
 	ForwardShift				= 1.0;
 	FOV 						= 100.0; //degrees
 	WindowAngle 				= FOV/NumWindows;
-	windowThreshold 			= 10;
+	windowThreshold 			= 15;
 
 	pthread_mutex_init(&navWindow_mutex,NULL);
 
@@ -60,7 +60,7 @@ void bepoppy8_periodic() {
 		}
 		pthread_mutex_unlock(&navWindow_mutex);
 
-		printf("I will adjust my heading by %f degrees\n", HeadingDeflection);
+		printf("I will adjust my heading by %f degrees\n", HeadingDeflection*57.3);
 
 		bepoppy8_AdjustWaypointBearing(WP_GOAL, ForwardShift, HeadingDeflection);
 	}
@@ -212,8 +212,8 @@ void bepoppy8_AdjustWaypointBearing(uint8_t waypoint, float distance, float Head
 	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
 
 	// Calculate the sine and cosine of the heading the drone is keeping
-	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi + HeadingDefl));
-	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi + HeadingDefl));
+	float sin_heading                 	= sinf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi) + HeadingDefl);
+	float cos_heading                 	= cosf(ANGLE_FLOAT_OF_BFP(eulerAngles->psi) + HeadingDefl);
 
 	// Calculate the shift in position where to place the waypoint you want to go to
 	shift.x                       		= POS_BFP_OF_REAL(sin_heading*distance);

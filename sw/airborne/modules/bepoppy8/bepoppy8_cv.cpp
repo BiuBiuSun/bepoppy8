@@ -255,8 +255,11 @@ int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img
 		}
 	}
 
+	printf("maxAverage: %f\n", maxAverage);
+
 	if (maxAverage < windowThreshold) {
-		return NumWindows;
+		printf("\nThreshold!!!!\n\n");
+		return 9;
 	}
 
 	return (bestWindow - (NumWindows-1)/2);

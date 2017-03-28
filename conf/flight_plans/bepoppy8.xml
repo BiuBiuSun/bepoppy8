@@ -121,9 +121,10 @@
       <deroute block="START"/>
     </block>
     <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
-      <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <go wp="TD"/>
-      <deroute block="Flare"/>
+    	<call_once fun="bepoppy8_stop()"/>
+      	<call_once fun="NavSetWaypointHere(WP_TD)"/>
+      	<go wp="TD"/>
+      	<deroute block="Flare"/>
     </block>
     <block name="Land">
       <go wp="TD"/>
