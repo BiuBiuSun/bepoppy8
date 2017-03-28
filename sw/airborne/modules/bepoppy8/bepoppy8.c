@@ -34,9 +34,13 @@ struct video_listener *listener = NULL;
 void bepoppy8_init() {
 	printf("[bepoppy8_init()] Start\n");
 	listener = cv_add_to_device(&front_camera, vision_func); // Initialize listener video_stream
+
+	NumWindows = 5;
 	ForwardShift				= 0.2;
 	FOV 						= 100.0; //degrees
 	WindowAngle 				= FOV/NumWindows;
+
+	pthread_mutex_init(&navWindow_mutex,NULL);
 
 	printf("[bepoppy8_init()] Finished\n");
 }
@@ -50,8 +54,8 @@ void bepoppy8_periodic() {
 	// Thread safe operation:
 	pthread_mutex_lock(&navWindow_mutex);
 	{
-	HeadingDeflection = (*NavWindow)*WindowAngle;
-	*NavWindow = 0;
+	HeadingDeflection = NavWindow*WindowAngle;
+	NavWindow = 0;
 	}
 	pthread_mutex_unlock(&navWindow_mutex);
 
@@ -176,7 +180,7 @@ void bepoppy8_resetWaypoint(uint8_t waypoint){
 	struct EnuCoor_i *pos 				= stateGetPositionEnu_i();
 	struct Int32Eulers *eulerAngles   	= stateGetNedToBodyEulers_i();
 	struct EnuCoor_i shift;
-	struct EnuCoor_i *new_coor;
+	struct EnuCoor_i new_coor;
 	float distance = 0.5;
 
 	// Calculate the sine and cosine of the heading the drone is keeping
@@ -187,11 +191,11 @@ void bepoppy8_resetWaypoint(uint8_t waypoint){
 	shift.x                       		= POS_BFP_OF_REAL(sin_heading * distance);
 	shift.y                       		= POS_BFP_OF_REAL(cos_heading * distance);
 
-	new_coor->x = pos->x + shift.x;
-	new_coor->y = pos->y + shift.y;
+	new_coor.x = pos->x + shift.x;
+	new_coor.y = pos->y + shift.y;
 
 	coordinateTurn(&shift);  // Double check the correct heading (should not be required);
-	waypoint_set_xy_i(waypoint, new_coor->x, new_coor->y); 	// Set x,y position of waypoint
+	waypoint_set_xy_i(waypoint, new_coor.x, new_coor.y); 	// Set x,y position of waypoint
 
 }
 

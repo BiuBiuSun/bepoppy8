@@ -22,9 +22,7 @@ void write_clusterLabels(Mat);
 Mat load_clusterLabels();
 Mat yuv422_to_ab(struct image_t *img);
 void yuv_to_yuv422(Mat image, char *img);
-//int *occlusionDetector(Mat img_binary, uint8_t ground_id);
 int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img);
-//float *windowAverage(Mat, uint8_t);
 
 
 // Global Variables:
@@ -50,7 +48,7 @@ struct image_t *vision_func(struct image_t *img) {
 
 	pthread_mutex_lock(&navWindow_mutex);
 	    {
-		NavWindow = occlusionDetector(clusterLabels, FloorID);
+		NavWindow = windowSearch(clusterLabels, FloorID, img);
 	    }
 	pthread_mutex_unlock(&navWindow_mutex);
 
@@ -219,7 +217,7 @@ uint8_t SearchFloor(Mat clusterLabels, struct image_t *img){
 int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img){
 	Mat inde_line(1, img->h, CV_32FC1);
 	Mat binary_img = clusterLabels == FloorCluster;
-	int testvar = 0;
+
 	for(int j=0; j<img->h; j++){
 		for(int i=j*img->w/2; i<img->w/2*(j+1); i++){
 				if(binary_img.at<uchar>(i)==0){
@@ -233,7 +231,7 @@ int8_t windowSearch(Mat clusterLabels, uint8_t FloorCluster, struct image_t *img
 	}
 	// Find the average corresponding to each window
 
-	NumWindows = 5;
+
 	float windowsAverage[NumWindows];
 
 	if ((NumWindows % 2) && (inde_line.cols*inde_line.rows % NumWindows == 0)) {
@@ -311,10 +309,7 @@ Mat yuv422_to_ab(struct image_t *img) {
 			img_buf += 4;
 		}
 	}
-	//printf("[yuv2ab()] YUV put in matrix\n");
-	//printf("[yuv2ab()] YUV about to be reshaped.\nRows: %d, Cols: %d, Channels: %d\n", yuv.rows, yuv.cols, yuv.channels());
-	//yuv.reshape(3, yuv.rows);
-	//printf("[yuv2ab()] YUV reshaped.\nRows: %d, Cols: %d, Channels: %d\n", yuv.rows, yuv.cols, yuv.channels());
+
 	cvtColor(yuv, BGR, CV_YUV2BGR);
 	//printf("[yuv2ab()] YUV2BGR\n");
 	cvtColor(BGR, Lab, CV_BGR2Lab);
@@ -347,57 +342,3 @@ void yuv_to_yuv422(Mat image, char *img) {
   }
 }
 
-
-/*int * occlusionDetector(Mat seg_image, uint8_t ground_id)
-{
-	/*
-	 * Detects the row where the ground transitions to an object for each column and determines the best window.
-	 */
-
-	// Best Properties
-/*	int *bestWindow = new int(0); // Current best window ID
-	int best_avg = 0; // Current best window average
-
-	// Local Window Properties
-	int window_size = seg_image.cols/NUM_WINDOWS; // width of a single window
-	int window_avg; // holds window average in loop
-
-//	cout << seg_image.rows << endl;
-//	cout << seg_image.cols << endl;
-	for(int window = 0; window < NUM_WINDOWS; window ++)
-	{
-		window_avg = 0; // Reset window average
-
-		// Note last few columns won't be iterated. seg_image.cols%NUM_WINDOWS
-		for(int c = window*window_size; c < (window+1)*window_size; ++c)
-		{
-			Mat currCol = seg_image.col(c); // Get current column
-
-			for(int r = currCol.rows-1; r >= 0 ; r--) // Start at bottom row and progressively scan up
-			{
-				// Tests if the pixel is no longer belonging to the ground in the segmented image
-				if (currCol.at<uchar>(r,0) != ground_id)
-				{
-					window_avg += (seg_image.rows-r)/window_size; // average obstacle height in window;
-					break; // Go to next column
-				}
-			}
-
-		}
-		// correction for large yaw angles and to minimise impact of marginal improvements
-		window_avg -= YAW_THRESHOLD*abs(window - NUM_WINDOWS/2);
-
-		// Check if current window is better than current best
-		if(window_avg > best_avg)
-		{
-			best_avg = window_avg;
-			*bestWindow = window-NUM_WINDOWS/2;
-		}
-
-//		cout << "Window " << window-NUM_WINDOWS/2 << " average:\t" << window_avg << endl; // print window average
-
-	}
-
-    //cout << "Best Window:\t\t"<<	*bestWindow	<< endl; // print best window
-	return bestWindow;
-	}*/
