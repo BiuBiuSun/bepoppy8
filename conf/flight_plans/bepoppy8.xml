@@ -111,7 +111,7 @@
     </block>
     <block name="PrepareObstacleRun">
       <while cond="!InsideObstacleZone(WaypointX(WP_GOAL),WaypointY(WP_GOAL))">
-        <call_once fun="increase_nav_heading(&nav_heading, 33)"/>
+        <call_once fun="increase_nav_heading(&nav_heading, 25)"/>
       </while>
     </block>
     <block name="GetIntoObstacleZone">
