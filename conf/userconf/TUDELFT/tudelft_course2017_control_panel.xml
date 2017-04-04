@@ -21,7 +21,7 @@
     </program>
     <program name="Environment Simulator" command="sw/simulator/gaia"/>
     <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
-	<arg flag="-ac 6" constant="@AC_ID"/>
+	<arg flag="-ac 1" constant="@AC_ID"/>
     </program>
   </section>
   <section name="sessions">
@@ -39,7 +39,7 @@
         <arg flag="hobbyking.xml"/>
       </program>
       <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
-      <arg flag="-ac 6" constant="@AC_ID"/>
+      <arg flag="-ac 1" constant="@AC_ID"/>
     	</program>
        
     </session>
@@ -57,7 +57,7 @@
         	<arg flag="hobbyking.xml"/>
       	</program>
      	<program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
-      		<arg flag="-ac 6" constant="@AC_ID"/>
+      		<arg flag="-ac 1" constant="@AC_ID"/>
     	</program>
       	<program name="Messages" command="sw/ground_segment/tmtc/messages"/>
     </session>

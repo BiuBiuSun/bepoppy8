@@ -17,27 +17,21 @@ extern "C" {
 #include "modules/computer_vision/lib/vision/image.h"
 
 extern struct image_t *vision_func(struct image_t *);
-#define NUM_WINDOWS 5 // Must be odd
 
-
-struct ClusterInfo{
-	uint32_t Cl0Global;
-	uint32_t Cl1Global;
-	uint32_t Cl2Global;
+int8_t 	NavWindow;
+uint8_t NumWindows;
+struct 	ClusterInfo{
+			uint32_t Cl0Global;
+			uint32_t Cl1Global;
+			uint32_t Cl2Global;
 };
 
-int8_t NavWindow;
-uint8_t NumWindows;
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#if DEBUGGING
-#define logTelemetry(msg)	bepoppy8_logTelemetry(msg, (int) strlen(msg));
-#else
-#define logTelemetry(...)
-#endif
 
 
 

@@ -14,26 +14,11 @@
 #include <inttypes.h>
 #include "state.h"
 
-#define DEBUGGING false
-#define useLab true
+// Define switches:
+#define VISUALIZE false 				// True = Edit video stream, to visualize vision segmentation
+#define useLab true 					// True = Use CIE Lab colorspace instead of YUV422 colorspace
 
-
-extern void bepoppy8_init(void);
-extern void bepoppy8_periodic(void);
-
-extern void bepoppy8_start(uint8_t);
-extern void bepoppy8_stop(void);
-
-extern void bepoppy8_logTelemetry(char*, int);
-extern void bepoppy8_moveWaypointBy(uint8_t, struct EnuCoor_i *);
-extern void bepoppy8_moveWaypointTo(uint8_t, struct EnuCoor_i *);
-extern void bepoppy8_moveWaypointForward(uint8_t, float);
-extern void bepoppy8_resetWaypoint(uint8_t);
-extern void bepoppy8_AdjustWaypointBearing(uint8_t, float, float);
-extern void coordinateTurn(struct EnuCoor_i *);
-extern float calculateHeading(struct EnuCoor_i *);
-extern uint8_t increase_nav_heading(int32_t *, float);
-
+// Initialize Global Variables
 bool STARTED;
 float ForwardShift;
 float FOV;
@@ -41,7 +26,25 @@ float WindowAngle;
 float HeadingDeflection;
 int windowThreshold;
 
+// Initialize Mutex
 pthread_mutex_t navWindow_mutex;
+
+// Module Prototype Functions
+extern void bepoppy8_init(void); 										// Module init function
+extern void bepoppy8_periodic(void);									// Module periodic fuction
+
+extern void bepoppy8_start(uint8_t);									// Start navigation
+extern void bepoppy8_stop(void); 										// Stop navigation
+extern void bepoppy8_logTelemetry(char*, int); 							// Send telemetry via INFO_MSG and terminal
+
+// Navigation Prototype Functions
+extern void bepoppy8_moveWaypointBy(uint8_t, struct EnuCoor_i *);
+extern void bepoppy8_moveWaypointForward(uint8_t, float);
+extern void bepoppy8_resetWaypoint(uint8_t);
+extern void bepoppy8_AdjustWaypointBearing(uint8_t, float, float);
+extern void coordinateTurn(struct EnuCoor_i *);
+extern uint8_t increase_nav_heading(int32_t *, float);
+
 
 #endif
 
